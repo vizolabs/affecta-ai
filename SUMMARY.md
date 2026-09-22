@@ -13,7 +13,10 @@ Build **AFFECTA AI**, a ranking-based explainable AI system for real-time facial
   - EXP-005 ResNet-50: **test Macro-F1 58.02%, acc 62.38%**, latency 7.567 ms median / 7.903 p95, 758 MiB, 23.5M params.
 - **Checkpoint format**: keys `epoch, model_state_dict, optimizer_state_dict, scheduler_state_dict, best_val_f1, best_val_acc, history, experiment_id, config, rng_states, current_stage, stage_epoch`. Epoch checkpoints are model-ONLY; full state lives in best.pt/last.pt. **(EXP-004/005 epoch checkpoints + last.pt trimmed — only best.pt retained.)**
 - Fixed staged schedule (all backbones): head_only 3 → block5 7 → block4_5 10 → block3_4_5 10; AdamW + cosine; label smoothing 0.05; class-weighted CE; patience 7 @ 0.001 on val_macro_f1 — matches the in-trainer implementation in `ml/training/train_expression.py`.
-- **Kaggle credentials configured**: `~/.kaggle/kaggle.json` (chmod 600), `KaggleApi().authenticate()` → AUTH_OK as `zopevipul`. Note: `python3 -m kaggle` fails (no `__main__`) — use the Python `KaggleApi` package, not the CLI.
+- **Kaggle credentials configured**: `~/.kaggle/kaggle.json` (chmod 600), `KaggleApi().authenticate()` → AUTH_OK as `zopevipul`. Note: `python3 -m kaggle` fails (no `__main__`) — CLI lives at `~/Library/Python/3.9/bin/kaggle` (not on PATH; prefix with that dir).
+- **⚠ Kaggle token is READ-ONLY**: dataset **download works**, but dataset **upload (blob) and kernel push both 401** (`KGAT_` scoped token). Notebooks must be launched via the **Kaggle web UI** (attach `shuvoalok/raf-db-dataset` as input), and results are downloaded from `/kaggle/working`. This is verified behavior, not a config bug.
+- **⚠ EXP-004/005 are FER2013 baselines (test=3591), NOT RAF-DB (test=3068)** — confirmed from their test_metrics confusion-matrix sizes. ADR-001's official-baseline comparison is therefore a FER2013 lens; the RAF-DB story is EXP-007/008 (fresh split, byte-identical reproduce via `prepare_rafdb.py --source kaggle`). Keep this distinction in mind when finalizing ADR-001.
+- Data source verified: `shuvoalok/raf-db-dataset` (Kaggle) = **byte-identical** to our local `data/processed/rafdb` (3068 test / 12271 train; stratified val 1837 carves identically).
 - ADR-001 decision criteria: Macro-F1 30%, latency 20%, acc 15%, memory/params 10%, per-class robustness 10%, XAI compatibility 10%, training cost 5%.
 - **No landmark detector installed** (dlib/mediapipe/face_alignment none) — Phase 4 needs a real 68-point detector.
 - **Known LRP-ε caveat**: conservation is approximate (composite z-rule; typical error 30–100% on VGG16, stable bounded maps). Exactness left for Phase 4 research budget (alpha-beta / LRP-0 first-layer).
@@ -32,22 +35,22 @@ Build **AFFECTA AI**, a ranking-based explainable AI system for real-time facial
 - timm 1.0.29 weights cached for efficientnet_b3 + vit_small_patch16_224.
 
 ### Active
-- **Kaggle migration**: sync code via public GitHub (git init + `.gitignore` + commit + `gh repo create --public`) → clone on Kaggle → train EXP-007 (EffNet-B3 RAF-DB, strong aug) and EXP-008 (ViT-Small) on T4 → export ckpts/metrics to a results dataset → pull back locally.
-- Pre-Kaggle code prep: add `cuda` to `ml/benchmarks/latency.py` `resolve_device`; fix `scripts/ensemble_eval.py` device selection; re-run pytest.
-- Kaggle training notebook (in `notebooks/`) not yet built.
-- Project dir is **not yet a git repo**; `gh` authenticated as `vizolabs`.
+- **Kaggle migration**: code synced to **public GitHub `vizolabs/affecta-ai`** (commits: cleanup setup + Kaggle notebook). Notebook `notebooks/kaggle_train_exp007_008.ipynb` ready: attach `shuvoalok/raf-db-dataset` input → `prepare_rafdb.py --source kaggle` → EXP-007 `efficientnet_b3` (300, strong aug, AMP) → EXP-008 `vit_small_patch16_224` → zip results. **Launch via Kaggle web UI** (token push is read-only).
+- `scripts/prepare_rafdb.py` gained a **`kaggle` source** (`DATASET/{train,test}/<label>/`) reproducing our exact official split; verified 1:1 on the downloaded zip.
+- Pre-Kaggle code fixes done: `cuda` support in `ml/benchmarks/latency.py` `resolve_device` (+CUDA memory stats, fuller backbone choices); device selection fixed in `scripts/ensemble_eval.py`; pytest 29 passed.
+- Cleanup done: FER2013 data, dead experiments (EXP-001/004-DIAG/004-TEST/006), legacy download/diagnostic/vgg16 scripts, `models/vgg16_best.pt`, `configs/` removed; EXP-004/005 kept at best.pt + metrics only (~9.5GB freed).
 
 ### Blocked
-- `kaggle` CLI not on PATH (`python3 -m kaggle` has no `__main__`); use Python `KaggleApi` directly.
+- Kaggle **write API** (dataset upload, kernel push) → 401; launch/train/download must go through the **web UI** with the manual steps in the notebook docstring.
+- `kaggle` CLI not on PATH (use `~/Library/Python/3.9/bin/kaggle` or the Python `KaggleApi`).
 - No AU dataset (DISFA/BP4D, research-licensed) — `data/au` missing; `train_au.py` waits on `data/images/*.jpg` + `data/labels/*.json`.
 - No landmark detector installed — needed for Phase 4 production region fidelity.
 - LRP-ε exact conservation + LLM-multimodal-attribution fusion deferred to Phase 4 research budget.
 
 ## Next Move
-1. Pre-Kaggle fixes: `cuda` in `ml/benchmarks/latency.py` `resolve_device`; device selection in `scripts/ensemble_eval.py`; re-run pytest.
-2. `git init` + `.gitignore` (exclude `data/`, `experiments/` checkpoints, `.pytest_cache`, `*.pt`) + commit + `gh repo create <name> --public --source . --push`.
-3. Build Kaggle T4 notebook: clone repo, `pip install -r requirements.txt` + timm, make RAF-DB available on Kaggle (upload via `KaggleApi` or reuse existing dataset), run EXP-007 (`train_expression.py --backbone efficientnet_b3 --experiment-id EXP-007 --batch-size 32 --data-dir data/processed/rafdb --augmentation strong`) → EXP-008 ViT-Small; export best.pt + test_metrics to results dataset.
-4. Pull results back → `scripts/ensemble_eval.py` (+TTA) → calibration → Grad-CAM/XAI probe → finalize ADR-001 (winner + rationale) → product V0 pieces.
+1. **Launch EXP-007/EXP-008 on Kaggle** (web UI): Settings → Accelerator **GPU T4 x2**; Input → add **`shuvoalok/raf-db-dataset`**; run cells. ~2–4h total on T4.
+2. Download `/kaggle/working/affecta_results.zip` → unzip into local `experiments/`.
+3. `scripts/ensemble_eval.py` (EffNet-B3 + ViT, `--tta`) on RAF-DB test → calibration → Grad-CAM/XAI probe → finalize ADR-001 (note FER2013 vs RAF-DB baseline provenance).
 
 ## Relevant Files
 - `ml/models/backbones.py` — timm loader, `INPUT_SIZES`, freeze API; `ml/training/train_expression.py` — stage-aware trainer (no `--seed`, seed=42 via ModelConfig); `ml/training/checkpoint.py` — full-state save/load.
