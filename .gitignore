@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Data (raw + processed - large, not for source control)
+data/processed/
+data/raw/
+data/splits/
+
+# Model artifacts / checkpoints
+*.pt
+*.pth
+models/
+
+# Experiment outputs (keep only tracked summary docs, not the heavy dirs)
+experiments/*/checkpoints/
+experiments/*/validation/
+experiments/*/test/
+experiments/*/train*.log
+experiments/*/train_history.json
+experiments/*/latency.json
+
+# Kaggle / secrets
+.kaggle/
+
+# Notebooks with secrets / checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+
+# Logs
+*.log

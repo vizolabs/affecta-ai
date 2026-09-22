@@ -1,0 +1,59 @@
+{
+  "experiment_id": "EXP-005-RESNET50",
+  "config": {
+    "backbone": "resnet50",
+    "num_classes": 7,
+    "pretrained": true,
+    "learning_rate": 0.0001,
+    "weight_decay": 0.0001,
+    "batch_size": 32,
+    "early_stop_patience": 7,
+    "early_stop_monitor": "val_macro_f1",
+    "early_stop_min_delta": 0.001,
+    "seed": 42,
+    "emotions": [
+      "angry",
+      "disgust",
+      "fear",
+      "happy",
+      "neutral",
+      "sad",
+      "surprise"
+    ],
+    "stages": [
+      {
+        "name": "head_only",
+        "epochs": 3,
+        "unfreeze": []
+      },
+      {
+        "name": "block5",
+        "epochs": 7,
+        "unfreeze": [
+          4
+        ]
+      },
+      {
+        "name": "block4_5",
+        "epochs": 10,
+        "unfreeze": [
+          3,
+          4
+        ]
+      },
+      {
+        "name": "block3_4_5",
+        "epochs": 10,
+        "unfreeze": [
+          2,
+          3,
+          4
+        ]
+      }
+    ],
+    "head_lr": 0.0003,
+    "backbone_lr": 1e-05,
+    "label_smoothing": 0.05,
+    "use_class_weights": true
+  }
+}
