@@ -80,6 +80,8 @@ def parse_labels(label_file: Path) -> list:
 def detect_source(raw: Path) -> str:
     if list(raw.glob('*.parquet')):
         return 'parquet'
+    if (raw / 'DATASET' / 'train').is_dir() and (raw / 'DATASET' / 'test').is_dir():
+        return 'kaggle'
     if find_label_file(raw) is not None and find_aligned_dir(raw) is not None:
         return 'official'
     return 'none'
@@ -227,6 +229,74 @@ def prepare_parquet(raw: Path, out: Path, val_fraction: float) -> dict:
     }
 
 
+def prepare_kaggle(raw: Path, out: Path, val_fraction: float) -> dict:
+    """Prepare the common Kaggle RAF-DB layout.
+
+    Layout (DATASET/train/<label 1-7>/...jpg, DATASET/test/<label 1-7>/...jpg):
+        <raw>/DATASET/train/1/train_00001_aligned.jpg
+        <raw>/DATASET/test/1/test_00002_aligned.jpg
+    Label comes from the parent directory name (1-7 -> emotion).
+    Official train/test partition preserved; stratified val carved from train.
+    """
+    base = raw / 'DATASET'
+
+    def _collect(split: str) -> list:
+        items = []
+        split_dir = base / split
+        if not split_dir.is_dir():
+            return items
+        for label_dir in sorted(split_dir.iterdir()):
+            if not label_dir.is_dir():
+                continue
+            try:
+                label = int(label_dir.name)
+            except ValueError:
+                continue
+            emotion = RAF_TO_EMOTION.get(label)
+            if emotion is None:
+                continue
+            for img in sorted(label_dir.glob('*.jpg')):
+                items.append((img.name, emotion, img))
+        return items
+
+    train_items = _collect('train')
+    test_items = _collect('test')
+    print(f'kaggle: train={len(train_items)} test={len(test_items)}')
+
+    train_pairs = [(n, e) for n, e, _ in train_items]
+    val_pairs, keep_pairs = _stratified_val_split(train_pairs, val_fraction)
+    val_set = set(val_pairs)
+    keep_set = set(keep_pairs)
+
+    def _write(items, split_name, filter_set=None):
+        done = 0
+        for name, emotion, src in items:
+            key = (name, emotion)
+            if filter_set is not None and key not in filter_set:
+                continue
+            dst_dir = out / split_name / emotion
+            dst_dir.mkdir(parents=True, exist_ok=True)
+            dst = dst_dir / name
+            if not dst.exists():
+                shutil.copy2(src, dst)
+            done += 1
+        print(f'[{split_name:5s}] {done} images written')
+        return done
+
+    n_train = _write(train_items, 'train', keep_set)
+    n_val = _write(train_items, 'val', val_set)
+    n_test = _write(test_items, 'test')
+
+    return {
+        'source': 'kaggle',
+        'n_train': n_train,
+        'n_val': n_val,
+        'n_test': n_test,
+        'official_train_total': len(train_items),
+        'official_test_total': len(test_items),
+    }
+
+
 def write_summary(out: Path, summary: dict):
     summaries = {}
     for split in ('train', 'val', 'test'):
@@ -246,7 +316,7 @@ def main():
     parser.add_argument('--out', type=Path, default=Path('data/processed/rafdb'))
     parser.add_argument('--val-fraction', type=float, default=0.15,
                         help='Stratified val holdout from the train partition')
-    parser.add_argument('--source', choices=['auto', 'official', 'parquet'], default='auto')
+    parser.add_argument('--source', choices=['auto', 'official', 'parquet', 'kaggle'], default='auto')
     args = parser.parse_args()
 
     source = args.source
@@ -262,6 +332,8 @@ def main():
     args.out.mkdir(parents=True, exist_ok=True)
     if source == 'parquet':
         summary = prepare_parquet(args.raw, args.out, args.val_fraction)
+    elif source == 'kaggle':
+        summary = prepare_kaggle(args.raw, args.out, args.val_fraction)
     else:
         summary = prepare_official(args.raw, args.out, args.val_fraction)
         summary['source'] = 'official'
