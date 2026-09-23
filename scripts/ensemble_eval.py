@@ -128,8 +128,8 @@ def main():
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--tta', action='store_true', help='10-view 5-crop+flip TTA')
     parser.add_argument('--temperature', type=float, default=None, help='Temperature for calibration')
-    parser.add_argument('--calibrate-on', default='val', choices=['train', 'val', 'test'],
-                        help='Split used to fit temperature scaling (requires --tta for consistency)')
+    parser.add_argument('--calibrate-on', default='val', choices=['train', 'val', 'test', 'none'],
+                        help='Split used to fit temperature scaling; "none" skips calibration (T=1)')
     parser.add_argument('--output', default=None)
     args = parser.parse_args()
 
@@ -171,7 +171,7 @@ def main():
             del model
         return labels, avg_logits / len(ckpts), per_model
 
-    if args.calibrate_on != args.split or args.tta:
+    if args.calibrate_on != 'none' and (args.calibrate_on != args.split or args.tta):
         val_labels, val_logits, _ = run_split(args.calibrate_on, args.tta)
         temp = fit_temperature(val_logits, val_labels)
         print(f'Calibrated on {args.calibrate_on}: T={temp:.3f}')
@@ -192,7 +192,7 @@ def main():
         'split': args.split,
         'tta': args.tta,
         'temperature': temp,
-        'calibrate_on': args.calibrate_on if args.calibrate_on != args.split else None,
+        'calibrate_on': None if args.calibrate_on == 'none' else args.calibrate_on,
         'ensemble_acc': acc,
         'ensemble_macro_f1': macro_f1,
         'ece': ece,

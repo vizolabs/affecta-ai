@@ -1,0 +1,103 @@
+{
+  "split": "test",
+  "tta": false,
+  "temperature": null,
+  "ensemble_acc": 69.75228161668839,
+  "ensemble_macro_f1": 62.3373986690145,
+  "ece": 0.49384543504638806,
+  "per_model": [
+    {
+      "backbone": "efficientnet_b3",
+      "acc": 57.30117340286832,
+      "macro_f1": 50.206543594214445
+    },
+    {
+      "backbone": "vit_small_patch16_224",
+      "acc": 69.94784876140808,
+      "macro_f1": 61.534271472502134
+    }
+  ],
+  "per_class_f1": {
+    "angry": 0.6481012658227848,
+    "disgust": 0.36771300448430494,
+    "fear": 0.44155844155844154,
+    "happy": 0.8191593352883676,
+    "neutral": 0.6792452830188679,
+    "sad": 0.6659505907626209,
+    "surprise": 0.7418899858956276
+  },
+  "confusion_matrix": [
+    [
+      128,
+      13,
+      8,
+      2,
+      2,
+      3,
+      6
+    ],
+    [
+      18,
+      82,
+      7,
+      3,
+      32,
+      13,
+      5
+    ],
+    [
+      3,
+      4,
+      51,
+      2,
+      2,
+      7,
+      5
+    ],
+    [
+      35,
+      63,
+      35,
+      838,
+      117,
+      57,
+      40
+    ],
+    [
+      24,
+      72,
+      10,
+      5,
+      468,
+      57,
+      44
+    ],
+    [
+      14,
+      43,
+      19,
+      11,
+      64,
+      310,
+      17
+    ],
+    [
+      11,
+      9,
+      27,
+      0,
+      13,
+      6,
+      263
+    ]
+  ],
+  "n_images": 3068,
+  "checkpoints": [
+    "experiments/EXP-007-EFFICIENTNET-B3/checkpoints/best.pt",
+    "experiments/EXP-008-VIT-SMALL/checkpoints/best.pt"
+  ],
+  "backbones": [
+    "efficientnet_b3",
+    "vit_small_patch16_224"
+  ]
+}
