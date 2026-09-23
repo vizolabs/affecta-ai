@@ -41,6 +41,8 @@ class Experiment:
 
 ## 3. Experiment IDs
 
+Reserved/planned IDs (from the research roadmap):
+
 | ID | Name | Status |
 |----|------|--------|
 | EXP-001 | Backbone Comparison | PLANNED |
@@ -50,6 +52,17 @@ class Experiment:
 | EXP-005 | Intensity Architecture | PLANNED |
 | EXP-006 | Uncertainty Thresholds | PLANNED |
 | EXP-007 | Temporal Model | PLANNED |
+
+Implemented runs (accuracy-first pivot, actual on-disk experiment IDs):
+
+| ID | Dataset | Backbone | Protocol | Test Acc | Test Macro-F1 | Status |
+|----|---------|----------|----------|----------|---------------|--------|
+| EXP-004-VGG16-CLEAN | FER2013 | VGG16 | official baseline | 67.84% | 66.58% | COMPLETED (historical) |
+| EXP-007-EFFICIENTNET-B3 | RAF-DB | EfficientNet-B3 | staged 30-ep schedule | 57.30% | 50.21% | COMPLETED (under-trained; tail retrain running) |
+| EXP-008-VIT-SMALL | RAF-DB | ViT-Small | staged 30-ep → extended tail + 10-view TTA | 78.88% | 70.05% | COMPLETED |
+
+Deliverables per run: `experiments/<ID>/checkpoints/{best,last}.pt`, `test_metrics.json`,
+`ensemble_*_test.json`. See ADR-001 for the analysis.
 
 ---
 
