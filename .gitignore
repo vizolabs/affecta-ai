@@ -17,7 +17,7 @@ data/splits/
 # Model artifacts / checkpoints
 *.pt
 *.pth
-models/
+/models/
 
 # Experiment outputs (keep only tracked summary docs, not the heavy dirs)
 experiments/*/checkpoints/
