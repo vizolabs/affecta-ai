@@ -126,6 +126,7 @@ def main():
     parser.add_argument('--data-dir', default=str(PROJECT_ROOT / 'data/processed/rafdb'))
     parser.add_argument('--split', default='test', choices=['train', 'val', 'test'])
     parser.add_argument('--batch-size', type=int, default=16)
+    parser.add_argument('--num-workers', type=int, default=2)
     parser.add_argument('--tta', action='store_true', help='10-view 5-crop+flip TTA')
     parser.add_argument('--temperature', type=float, default=None, help='Temperature for calibration')
     parser.add_argument('--calibrate-on', default='val', choices=['train', 'val', 'test', 'none'],
@@ -159,7 +160,8 @@ def main():
             if labels is None:
                 labels = np.array([y for _, y in dataset.samples])
                 print(f'{split}: {len(dataset)} images | tta={tta} | device={device}')
-            loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
+            loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False,
+                                num_workers=0 if tta else args.num_workers)
 
             model, size = load_model(ckpt, backbone, device)
             logits = predict_logits(model, loader, device, tta, image_size)
