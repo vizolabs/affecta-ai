@@ -38,3 +38,8 @@ experiments/*/latency.json
 
 # Logs
 *.log
+!docs/evidence/*.log
+
+# Webcam outputs
+out_*.png
+snapshot_*.png

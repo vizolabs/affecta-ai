@@ -1,6 +1,6 @@
 # AFFECTA AI Makefile
 
-.PHONY: help install train evaluate test lint clean
+.PHONY: help install train evaluate test lint clean webcam ensemble
 
 # Default target
 help:
@@ -8,6 +8,8 @@ help:
 	@echo "  install    - Install dependencies"
 	@echo "  train      - Train models"
 	@echo "  evaluate   - Evaluate models"
+	@echo "  webcam     - Live webcam emotion detection (DAN, 89.70%)"
+	@echo "  ensemble   - Ensemble/TTA/calibration leaderboard"
 	@echo "  test       - Run tests"
 	@echo "  lint       - Run linter"
 	@echo "  clean      - Clean generated files"
@@ -15,6 +17,14 @@ help:
 # Install dependencies
 install:
 	pip install -r requirements.txt
+
+# Live webcam emotion detection
+webcam:
+	python -m src.pipeline.webcam $(ARGS)
+
+# Ensemble / TTA / calibration leaderboard
+ensemble:
+	python scripts/ensemble_production.py $(ARGS)
 
 # Train expression classifier
 train-expression:
