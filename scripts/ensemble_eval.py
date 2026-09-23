@@ -29,7 +29,7 @@ from src.core.config import EMOTIONS, PROJECT_ROOT
 from ml.data.augmentation import build_eval_transform, ten_crop_flip_views
 from ml.models.backbones import build_expression_model, input_size_for
 from ml.training.checkpoint import load_checkpoint
-from ml.benchmarks.calibration import compute_ece
+from ml.benchmarks.calibration import compute_ece, fit_temperature
 
 
 class FolderDataset(Dataset):
@@ -63,6 +63,28 @@ def load_model(ckpt_path: str, backbone: str, device: torch.device) -> torch.nn.
 
 
 @torch.no_grad()
+def predict_logits(
+    model: torch.nn.Module,
+    loader: DataLoader,
+    device: torch.device,
+    tta: bool,
+    image_size: int,
+) -> np.ndarray:
+    all_logits = []
+    for batch in loader:
+        images, _ = batch
+        if tta:
+            views = images  # (B, 10, 3, S, S)
+            b, n, c, h, w = views.shape
+            logits = model(views.reshape(b * n, c, h, w).to(device))
+            logits = logits.view(b, n, -1).mean(dim=1)
+        else:
+            logits = model(images.to(device))
+        all_logits.append(logits.detach().float().cpu().numpy())
+    return np.concatenate(all_logits, axis=0)
+
+
+@torch.no_grad()
 def predict_probs(
     model: torch.nn.Module,
     loader: DataLoader,
@@ -70,21 +92,8 @@ def predict_probs(
     tta: bool,
     image_size: int,
 ) -> np.ndarray:
-    all_probs = []
-    for batch in loader:
-        images, _ = batch
-        if tta:
-            # images come from base eval transform; regenerate views per PIL path not
-            # available here — instead treat tensor crops via TenCrop on the batch.
-            # For simplicity the dataset is re-instantiated with ten_crop in main.
-            views = images  # (B, 10, 3, S, S)
-            b, n, c, h, w = views.shape
-            logits = model(views.reshape(b * n, c, h, w).to(device))
-            probs = F.softmax(logits, dim=1).reshape(b, n, -1).mean(dim=1)
-        else:
-            probs = F.softmax(model(images.to(device)), dim=1)
-        all_probs.append(probs.cpu().numpy())
-    return np.concatenate(all_probs, axis=0)
+    logits = predict_logits(model, loader, device, tta, image_size)
+    return _softmax(logits)
 
 
 class TTADataset(Dataset):
@@ -119,6 +128,8 @@ def main():
     parser.add_argument('--batch-size', type=int, default=16)
     parser.add_argument('--tta', action='store_true', help='10-view 5-crop+flip TTA')
     parser.add_argument('--temperature', type=float, default=None, help='Temperature for calibration')
+    parser.add_argument('--calibrate-on', default='val', choices=['train', 'val', 'test'],
+                        help='Split used to fit temperature scaling (requires --tta for consistency)')
     parser.add_argument('--output', default=None)
     args = parser.parse_args()
 
@@ -135,37 +146,40 @@ def main():
         device = torch.device('cpu')
     data_dir = Path(args.data_dir)
 
-    labels = None
-    avg_probs = None
-    per_model_acc = []
-    for ckpt, backbone in zip(ckpts, backbones):
-        # Per-model dataset: each backbone has its own input resolution
-        # (e.g. EffNet-B3=300, ViT-Small=224), so the eval transform /
-        # TTA view generator must be built per model.
-        image_size = input_size_for(backbone)
-        if args.tta:
-            dataset = TTADataset(data_dir, args.split, image_size)
-        else:
-            dataset = FolderDataset(data_dir, args.split, build_eval_transform(image_size))
-        if labels is None:
-            labels = np.array([y for _, y in dataset.samples])
-            print(f'{args.split}: {len(dataset)} images | tta={args.tta} | device={device}')
-        loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
+    def run_split(split: str, tta: bool) -> tuple:
+        labels = None
+        avg_logits = None
+        per_model = []
+        for ckpt, backbone in zip(ckpts, backbones):
+            image_size = input_size_for(backbone)
+            if tta:
+                dataset = TTADataset(data_dir, split, image_size)
+            else:
+                dataset = FolderDataset(data_dir, split, build_eval_transform(image_size))
+            if labels is None:
+                labels = np.array([y for _, y in dataset.samples])
+                print(f'{split}: {len(dataset)} images | tta={tta} | device={device}')
+            loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
 
-        print(f'model: {backbone} <- {ckpt} (input {image_size})')
-        model, size = load_model(ckpt, backbone, device)
-        probs = predict_probs(model, loader, device, args.tta, image_size)
-        preds = probs.argmax(axis=1)
-        acc = 100.0 * accuracy_score(labels, preds)
-        f1 = 100.0 * f1_score(labels, preds, average='macro')
-        per_model_acc.append({'backbone': backbone, 'acc': acc, 'macro_f1': f1})
-        print(f'  single: acc={acc:.2f}% F1={f1:.2f}%')
-        avg_probs = probs if avg_probs is None else avg_probs + probs
-        del model
+            model, size = load_model(ckpt, backbone, device)
+            logits = predict_logits(model, loader, device, tta, image_size)
+            preds = logits.argmax(axis=1)
+            acc = 100.0 * accuracy_score(labels, preds)
+            f1 = 100.0 * f1_score(labels, preds, average='macro')
+            per_model.append({'backbone': backbone, 'acc': acc, 'macro_f1': f1})
+            avg_logits = logits if avg_logits is None else avg_logits + logits
+            del model
+        return labels, avg_logits / len(ckpts), per_model
 
-    avg_probs = avg_probs / len(ckpts)
-    if args.temperature is not None and args.temperature > 0:
-        avg_probs = _softmax(_log_softmax(avg_probs) / args.temperature)
+    if args.calibrate_on != args.split or args.tta:
+        val_labels, val_logits, _ = run_split(args.calibrate_on, args.tta)
+        temp = fit_temperature(val_logits, val_labels)
+        print(f'Calibrated on {args.calibrate_on}: T={temp:.3f}')
+    else:
+        temp = args.temperature if args.temperature else 1.0
+
+    labels, avg_logits, per_model_acc = run_split(args.split, args.tta)
+    avg_probs = _softmax(avg_logits / temp)
 
     preds = avg_probs.argmax(axis=1)
     acc = 100.0 * accuracy_score(labels, preds)
@@ -177,7 +191,8 @@ def main():
     result = {
         'split': args.split,
         'tta': args.tta,
-        'temperature': args.temperature,
+        'temperature': temp,
+        'calibrate_on': args.calibrate_on if args.calibrate_on != args.split else None,
         'ensemble_acc': acc,
         'ensemble_macro_f1': macro_f1,
         'ece': ece,
