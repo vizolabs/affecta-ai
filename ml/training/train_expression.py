@@ -363,6 +363,7 @@ def train_expression_model(
     max_stage_idx: Optional[int] = None,
     stages: Optional[List[Dict[str, Any]]] = None,
     diag_limit: Optional[int] = None,
+    extend_last_stage: Optional[int] = None,
     augmentation: str = 'baseline',
     loss_name: str = 'ce',
     mixup_alpha: float = 0.0,
@@ -413,6 +414,12 @@ def train_expression_model(
     stages = stages or STAGES
     if max_stage_idx is not None:
         stages = stages[:max_stage_idx]
+    if extend_last_stage is not None:
+        last = stages[-1]
+        last_pre = dict(last)
+        last['max_epochs'] = extend_last_stage
+        last['T_max'] = max(extend_last_stage, 1)
+        print(f"Extended last stage '{last['name']}': epochs {last_pre['max_epochs']} -> {extend_last_stage}")
 
     # Create experiment directory structure
     exp_dir = EXPERIMENTS_DIR / experiment_id
@@ -744,6 +751,7 @@ if __name__ == "__main__":
     parser.add_argument('--resume', type=str, default=None)
     parser.add_argument('--max-stage', type=int, default=None, help='Only run up to stage index (diagnostics)')
     parser.add_argument('--diag-limit', type=int, default=None, help='Cap training samples for diagnostic runs')
+    parser.add_argument('--extend-last-stage', type=int, default=None, help='Continue last stage for N total epochs (resume use)')
     parser.add_argument('--augmentation', default='baseline', choices=['baseline', 'strong'])
     parser.add_argument('--loss', default='ce', choices=['ce', 'focal'])
     parser.add_argument('--mixup', type=float, default=0.0)
@@ -768,6 +776,7 @@ if __name__ == "__main__":
         args.data_dir, config, args.experiment_id, args.resume,
         max_stage_idx=args.max_stage,
         diag_limit=args.diag_limit,
+        extend_last_stage=args.extend_last_stage,
         augmentation=args.augmentation,
         loss_name=args.loss,
         mixup_alpha=args.mixup,

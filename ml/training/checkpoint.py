@@ -94,7 +94,19 @@ def save_checkpoint(
     # Ensure directory exists
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     
-    torch.save(checkpoint, path)
+    # Atomic save: write to a temp file first, then rename. torch.save on MPS can
+    # occasionally abort mid-write leaving a corrupt checkpoint; rename avoids
+    # ever exposing a partial file at the final path.
+    tmp_path = str(path) + '.tmp'
+    for attempt in range(3):
+        try:
+            torch.save(checkpoint, tmp_path)
+            os.replace(tmp_path, str(path))
+            break
+        except Exception as e:
+            if attempt == 2:
+                raise
+            print(f'[checkpoint] save attempt {attempt + 1} failed: {e}; retrying', flush=True)
 
 
 def load_checkpoint(
