@@ -1,0 +1,82 @@
+{
+  "model": "DDAMFN++ released ckpt",
+  "ckpt": "rafdb_epoch20_acc0.9204_bacc0.8617.pth",
+  "test_root": "/Users/vixux/Downloads/Human Facial Emotion Detection/data/processed/rafdb/test_rf",
+  "test_acc": 83.83,
+  "test_balanced_acc": 73.4,
+  "n_test": 3068,
+  "per_class_acc": {
+    "Neutral": 74.85,
+    "Happy": 97.97,
+    "Sad": 93.51,
+    "Surprise": 57.45,
+    "Fear": 45.95,
+    "Disgust": 68.75,
+    "Angry": 75.31
+  },
+  "confusion_matrix": [
+    [
+      509,
+      65,
+      85,
+      1,
+      0,
+      19,
+      1
+    ],
+    [
+      9,
+      1161,
+      8,
+      1,
+      1,
+      4,
+      1
+    ],
+    [
+      10,
+      12,
+      447,
+      0,
+      1,
+      5,
+      3
+    ],
+    [
+      43,
+      51,
+      18,
+      189,
+      5,
+      11,
+      12
+    ],
+    [
+      1,
+      12,
+      13,
+      7,
+      34,
+      3,
+      4
+    ],
+    [
+      7,
+      18,
+      16,
+      2,
+      0,
+      110,
+      7
+    ],
+    [
+      4,
+      22,
+      9,
+      0,
+      1,
+      4,
+      122
+    ]
+  ]
+}

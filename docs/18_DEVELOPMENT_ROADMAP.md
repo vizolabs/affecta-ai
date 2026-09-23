@@ -148,11 +148,11 @@ Build the product around a validated AI core, not the other way around.
 ### Week 13: Frontend Foundation
 - [ ] Set up Next.js project
 - [ ] Implement authentication UI
-- [ ] Implement camera access
+- [x] Implement camera access (src/pipeline/webcam.py, Haar cascade)
 - [ ] Implement basic layout
 
 ### Week 14: Live Observer
-- [ ] Implement camera feed
+- [x] Implement camera feed (live HUD, EMA, Grad-CAM overlay, --image headless)
 - [ ] Implement face overlays
 - [ ] Implement person cards
 - [ ] Implement emotion spectrum

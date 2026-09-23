@@ -5,6 +5,11 @@ Status: LOCKED (structure) / IMPL-DEPENDENT (specifics)
 Version: V1.0
 ```
 
+**Implementation status:** webcam stage implemented in `src/pipeline/webcam.py`
+(Haar face detection, production-model inference via `ml/models/production.py`,
+EMA smoothing, HUD, Grad-CAM toggle, headless `--image` mode, `make webcam`).
+Covered by `tests/test_production_webcam.py` (16 tests).
+
 ---
 
 ## 1. Pipeline Overview

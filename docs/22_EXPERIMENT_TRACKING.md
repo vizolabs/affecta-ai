@@ -58,8 +58,11 @@ Implemented runs (accuracy-first pivot, actual on-disk experiment IDs):
 | ID | Dataset | Backbone | Protocol | Test Acc | Test Macro-F1 | Status |
 |----|---------|----------|----------|----------|---------------|--------|
 | EXP-004-VGG16-CLEAN | FER2013 | VGG16 | official baseline | 67.84% | 66.58% | COMPLETED (historical) |
-| EXP-007-EFFICIENTNET-B3 | RAF-DB | EfficientNet-B3 | staged 30-ep schedule | 57.30% | 50.21% | COMPLETED (under-trained; tail retrain running) |
+| EXP-007-EFFICIENTNET-B3 | RAF-DB | EfficientNet-B3 | staged 30-ep schedule | 57.30% | 50.21% | COMPLETED |
 | EXP-008-VIT-SMALL | RAF-DB | ViT-Small | staged 30-ep → extended tail + 10-view TTA | 78.88% | 70.05% | COMPLETED |
+| EXP-009-DDAMFN-PP | RAF-DB | DDAMFN++ (released ckpt) | reproduced on our test (MTCNN / RetinaFace-realigned) | 82.40% / 83.83% | — (bacc 73.40% RF) | COMPLETED |
+| EXP-010-ENSEMBLE | RAF-DB | DAN+DDAMFN++±ViT | avg-probs + TTA + T-scaling (val-fitted) | **ens_dan+ddamfn+vit 89.99%** (ens_dan+vit bacc 83.12%; T-scaling ECE 0.113→0.087) | bacc 82.90% | COMPLETED |
+| EXP-011-DAN-REPRO | RAF-DB | DAN (released ckpt) | reproduced on our official 3068 test | **89.70%** | bacc 82.75% | COMPLETED (= published number) |
 
 Deliverables per run: `experiments/<ID>/checkpoints/{best,last}.pt`, `test_metrics.json`,
 `ensemble_*_test.json`. See ADR-001 for the analysis.

@@ -1,0 +1,119 @@
+{
+  "split": "official RAF-DB test (n=3068)",
+  "class_order": [
+    "angry",
+    "disgust",
+    "fear",
+    "happy",
+    "neutral",
+    "sad",
+    "surprise"
+  ],
+  "device": "mps",
+  "calibration": {
+    "target": "ens_dan+ddamfn+vit",
+    "raw_ece": 0.1125,
+    "temperature": 0.2569,
+    "cal_ece": 0.0865
+  },
+  "leaderboard": [
+    {
+      "name": "dan",
+      "test_acc": 89.7,
+      "test_bacc": 82.75,
+      "ece": 0.0331,
+      "n": 3068
+    },
+    {
+      "name": "dan+tta",
+      "test_acc": 83.83,
+      "test_bacc": 74.75,
+      "ece": 0.0532,
+      "n": 3068
+    },
+    {
+      "name": "ddamfn",
+      "test_acc": 83.83,
+      "test_bacc": 73.4,
+      "ece": 0.0795,
+      "n": 3068
+    },
+    {
+      "name": "ddamfn+tta",
+      "test_acc": 83.15,
+      "test_bacc": 70.71,
+      "ece": 0.0677,
+      "n": 3068
+    },
+    {
+      "name": "vit_small",
+      "test_acc": 76.63,
+      "test_bacc": 70.72,
+      "ece": 0.1003,
+      "n": 3068
+    },
+    {
+      "name": "vit_small+tta",
+      "test_acc": 78.88,
+      "test_bacc": 73.23,
+      "ece": 0.118,
+      "n": 3068
+    },
+    {
+      "name": "ens_dan+ddamfn",
+      "test_acc": 89.24,
+      "test_bacc": 81.69,
+      "ece": 0.0183,
+      "n": 3068
+    },
+    {
+      "name": "ens_dan+vit",
+      "test_acc": 89.31,
+      "test_bacc": 83.12,
+      "ece": 0.1289,
+      "n": 3068
+    },
+    {
+      "name": "ens_dan+ddamfn+vit",
+      "test_acc": 89.99,
+      "test_bacc": 82.9,
+      "ece": 0.1125,
+      "n": 3068
+    },
+    {
+      "name": "ens_tta_dan+ddamfn",
+      "test_acc": 85.95,
+      "test_bacc": 75.83,
+      "ece": 0.0151,
+      "n": 3068
+    },
+    {
+      "name": "ens_tta_dan+ddamfn+vit",
+      "test_acc": 87.19,
+      "test_bacc": 77.82,
+      "ece": 0.0963,
+      "n": 3068
+    },
+    {
+      "name": "ens_best3_tta",
+      "test_acc": 87.19,
+      "test_bacc": 77.82,
+      "ece": 0.0963,
+      "n": 3068
+    },
+    {
+      "name": "ens_w532_tta",
+      "test_acc": 86.11,
+      "test_bacc": 76.62,
+      "ece": 0.0496,
+      "n": 3068
+    },
+    {
+      "name": "cal::ens_dan+ddamfn+vit",
+      "raw_ece": 0.1125,
+      "temperature": 0.2569,
+      "cal_ece": 0.0865
+    }
+  ],
+  "timestamp": "2026-09-23 19:27:22"
+}
