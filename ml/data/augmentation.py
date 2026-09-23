@@ -51,26 +51,36 @@ def build_eval_transform(image_size: int) -> transforms.Compose:
     ])
 
 
-def ten_crop_flip_views(image_size: int):
+class _TenCropFlipViews:
+    """Picklable 10-view TTA transform: 5-crop + horizontal flips.
+
+    Implemented as a module-level class so it survives multiprocessing with
+    spawn workers (nested closures cannot be pickled).
+    """
+
+    def __init__(self, image_size: int):
+        self.larger = int(round(image_size * 1.14))
+        self.image_size = image_size
+        self.to_tensor = transforms.ToTensor()
+        self.normalize = transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
+
+    def __call__(self, img):
+        resized = transforms.Resize((self.larger, self.larger))(img)
+        # torchvision TenCrop may yield 10 (incl. vertical flips); keep standard
+        # 5 geometric crops (TL,TR,BL,BR,C) + their hflips = 10 views.
+        crops = list(transforms.TenCrop(self.image_size)(resized))[:5]
+        tensors = [self.to_tensor(c) for c in crops]
+        views = [self.normalize(t) for t in tensors]
+        views += [self.normalize(transforms.functional.hflip(t)) for t in tensors]
+        return torch.stack(views, dim=0)
+
+
+def ten_crop_flip_views(image_size: int) -> _TenCropFlipViews:
     """Return transform producing a (10, 3, S, S) tensor: 5-crop + horizontal flips.
 
     TenCrop yields 5 PIL crops; we append their hflips for 10 total views.
     """
-    larger = int(round(image_size * 1.14))
-    to_tensor = transforms.ToTensor()
-    normalize = transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)
-
-    def _apply(img):
-        resized = transforms.Resize((larger, larger))(img)
-        # torchvision TenCrop may yield 10 (incl. vertical flips); keep standard
-        # 5 geometric crops (TL,TR,BL,BR,C) + their hflips = 10 views.
-        crops = list(transforms.TenCrop(image_size)(resized))[:5]
-        tensors = [to_tensor(c) for c in crops]
-        views = [normalize(t) for t in tensors]
-        views += [normalize(transforms.functional.hflip(t)) for t in tensors]
-        return torch.stack(views, dim=0)
-
-    return _apply
+    return _TenCropFlipViews(image_size)
 
 
 def mixup_batch(
