@@ -135,20 +135,24 @@ def main():
         device = torch.device('cpu')
     data_dir = Path(args.data_dir)
 
-    image_size = input_size_for(backbones[0])
-    if args.tta:
-        dataset = TTADataset(data_dir, args.split, image_size)
-    else:
-        dataset = FolderDataset(data_dir, args.split, build_eval_transform(image_size))
-    labels = np.array([y for _, y in dataset.samples])
-    print(f'{args.split}: {len(dataset)} images | tta={args.tta} | device={device}')
-
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
-
+    labels = None
     avg_probs = None
     per_model_acc = []
     for ckpt, backbone in zip(ckpts, backbones):
-        print(f'model: {backbone} <- {ckpt}')
+        # Per-model dataset: each backbone has its own input resolution
+        # (e.g. EffNet-B3=300, ViT-Small=224), so the eval transform /
+        # TTA view generator must be built per model.
+        image_size = input_size_for(backbone)
+        if args.tta:
+            dataset = TTADataset(data_dir, args.split, image_size)
+        else:
+            dataset = FolderDataset(data_dir, args.split, build_eval_transform(image_size))
+        if labels is None:
+            labels = np.array([y for _, y in dataset.samples])
+            print(f'{args.split}: {len(dataset)} images | tta={args.tta} | device={device}')
+        loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
+
+        print(f'model: {backbone} <- {ckpt} (input {image_size})')
         model, size = load_model(ckpt, backbone, device)
         probs = predict_probs(model, loader, device, args.tta, image_size)
         preds = probs.argmax(axis=1)
