@@ -23,10 +23,10 @@ import torch
 from PIL import Image
 
 from ml.data.dataset import FERDataset
+from ml.models.backbones import build_expression_model, input_size_for
 from ml.xai.lrp import get_lrp_engine
 from ml.xai.lrp_epsilon import get_epsilon_lrp
 from src.core.config import EMOTIONS, DATA_DIR
-from src.models.expression_classifier import get_expression_model
 
 ZONE_DEFS = {
     'brows': (0.20, 0.32, 0.0, 1.0),
@@ -53,7 +53,9 @@ def zone_mask(name: str, h: int, w: int) -> np.ndarray:
 def main():
     parser = argparse.ArgumentParser(description='Per-class region attribution probe')
     parser.add_argument('--checkpoint', default='experiments/EXP-004-VGG16-CLEAN/checkpoints/best.pt')
-    parser.add_argument('--backbone', default='vgg16', choices=['vgg16', 'resnet50', 'efficientnet_b2'])
+    parser.add_argument('--backbone', default='vgg16',
+                        choices=['vgg16', 'resnet50', 'efficientnet_b2', 'efficientnet_b3',
+                                 'vit_small_patch16_224', 'vit_base_patch16_224'])
     parser.add_argument('--data-dir', default=str(DATA_DIR / 'processed'))
     parser.add_argument('--samples-per-class', type=int, default=30)
     parser.add_argument('--method', default='grad', choices=['grad', 'lrp'])
@@ -65,9 +67,9 @@ def main():
         'mps' if args.device == 'auto' and torch.backends.mps.is_available()
         else 'cpu' if args.device == 'auto' else args.device
     )
-    image_size = 224 if args.backbone in ('vgg16', 'resnet50') else 260
+    image_size = input_size_for(args.backbone)
 
-    model = get_expression_model(backbone=args.backbone, pretrained=False)
+    model = build_expression_model(backbone=args.backbone, pretrained=False)
     ck = torch.load(args.checkpoint, map_location='cpu', weights_only=False)
     model.load_state_dict(ck['model_state_dict'])
     model.eval().to(device)
