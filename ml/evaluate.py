@@ -1,8 +1,8 @@
 """Standalone test evaluation script for AFFECTA AI.
 
 Usage:
-    python3 ml/evaluate.py --experiment-dir experiments/EXP-004-VGG16-CLEAN --split test
-    python3 ml/evaluate.py --checkpoint experiments/EXP-004-VGG16-CLEAN/checkpoints/best.pt --split test
+    python3 -m ml.evaluate --experiment-dir experiments/EXP-008-VIT-SMALL --split test
+    python3 -m ml.evaluate --checkpoint experiments/EXP-008-VIT-SMALL/checkpoints/best.pt --split test
 """
 
 import argparse

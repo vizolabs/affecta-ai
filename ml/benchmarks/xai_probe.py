@@ -52,7 +52,7 @@ def zone_mask(name: str, h: int, w: int) -> np.ndarray:
 
 def main():
     parser = argparse.ArgumentParser(description='Per-class region attribution probe')
-    parser.add_argument('--checkpoint', default='experiments/EXP-004-VGG16-CLEAN/checkpoints/best.pt')
+    parser.add_argument('--checkpoint', default='experiments/EXP-008-VIT-SMALL/checkpoints/best.pt')
     parser.add_argument('--backbone', default='vgg16',
                         choices=['vgg16', 'resnet50', 'efficientnet_b2', 'efficientnet_b3',
                                  'vit_small_patch16_224', 'vit_base_patch16_224'])

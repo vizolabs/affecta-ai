@@ -32,7 +32,7 @@ train-expression:
 
 # Evaluate a trained model / experiment
 evaluate:
-	python ml/evaluate.py --experiment-dir experiments/EXP-005-RESNET50 --split test
+	python ml/evaluate.py --experiment-dir experiments/EXP-008-VIT-SMALL --split test
 
 # Run tests
 test:
