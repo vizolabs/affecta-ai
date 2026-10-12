@@ -15,7 +15,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_BREAK
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Cm, Pt, RGBColor
+from docx.shared import Cm, Inches, Pt, RGBColor
 
 ACCENT = RGBColor(0x1F, 0x4E, 0x79)       # dark professional blue
 ACCENT_HEX = "1F4E79"
@@ -136,6 +136,22 @@ def new_document() -> Document:
 
 def h(doc, level: int, text: str) -> None:
     doc.add_heading(text, level=level)
+
+
+def img(doc, path: Path, caption: str, width_in: float = 6.2) -> None:
+    """Embed a figure (generated from real experiment artifacts) with a caption."""
+    if not path.is_file():
+        return
+    para = doc.add_paragraph()
+    para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    para.add_run().add_picture(str(path), width=Inches(width_in))
+    cap = doc.add_paragraph()
+    cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = cap.add_run(caption)
+    run.italic = True
+    run.font.size = Pt(8.5)
+    run.font.color.rgb = RGBColor(0x59, 0x59, 0x59)
+    cap.paragraph_format.space_after = Pt(10)
 
 
 def p(doc, text: str, *, bold=False, italic=False, size=11,
@@ -681,6 +697,15 @@ def build(output: Path) -> None:
         ("Authoritative leaderboard — ", "experiments/EXP-010-ENSEMBLE/"
          "production_ensemble_results.json (13 leaderboard entries)."),
     ])
+    evidence = Path(__file__).resolve().parent.parent / "docs" / "evidence"
+    img(doc, evidence / "fig_leaderboard.png",
+        "Figure 1 — Production leaderboard (test accuracy vs balanced accuracy), "
+        "generated from production_ensemble_results.json by "
+        "scripts/generate_figures.py.")
+    img(doc, evidence / "fig_calibration.png",
+        "Figure 2 — Expected calibration error before/after validation-fitted "
+        "temperature scaling on the champion ensemble (same JSON source).",
+        width_in=3.6)
     h(doc, 2, "6.4 Model provenance & research-integrity statement")
     p(doc,
       "This section exists because provenance must be auditable. Of the five models "

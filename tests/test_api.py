@@ -115,6 +115,36 @@ def test_register_duplicate_email(client):
     assert client.post("/api/auth/register", json=payload).status_code == 409
 
 
+def test_register_password_policy(client):
+    """Spec 12: 8-char minimum on register; oversized passwords rejected."""
+    email = f"{uuid.uuid4().hex[:12]}@user.com"
+    r = client.post("/api/auth/register", json={"email": email, "password": "short7c"})
+    assert r.status_code == 422
+    # Login rejects oversized passwords before PBKDF2 hashing (DoS guard).
+    r = client.post("/api/auth/login", json={"email": email, "password": "x" * 5000})
+    assert r.status_code == 422
+
+
+def test_settings_clamps(client):
+    """Out-of-range settings (e.g. ema_alpha > 1) must be rejected, not stored."""
+    email = f"{uuid.uuid4().hex[:12]}@user.com"
+    r = client.post("/api/auth/register", json={"email": email, "password": "secret123"})
+    headers = {"Authorization": f"Bearer {r.json()['data']['token']}"}
+
+    r = client.put("/api/settings", json={"ema_alpha": 5.0}, headers=headers)
+    assert r.status_code == 422
+
+    r = client.put("/api/settings", json={"narrator_speed": 9.0}, headers=headers)
+    assert r.status_code == 422
+
+    r = client.put("/api/settings", json={"narrator_detail": "verbose"}, headers=headers)
+    assert r.status_code == 422
+
+    r = client.put("/api/settings", json={"ema_alpha": 0.4}, headers=headers)
+    assert r.status_code == 200
+    assert r.json()["data"]["ema_alpha"] == 0.4
+
+
 def test_register_local_domain_email(client):
     """Local-first: internal domains like .local are accepted (no mail sent)."""
     email = f"{uuid.uuid4().hex[:12]}@civicpulse.local"

@@ -22,7 +22,8 @@ export function sessionLabel(s: SessionOut): string {
   })}`;
 }
 
-export function formatDuration(seconds?: number | null): string {
+/** Session-length phrasing ("5m 30s" / "30s"). Distinct from cadence's m:ss live timer. */
+export function formatSessionDuration(seconds?: number | null): string {
   if (seconds == null) return "—";
   const m = Math.floor(seconds / 60);
   const s = Math.round(seconds % 60);

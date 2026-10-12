@@ -1,7 +1,7 @@
 # ADR-003: AU Subset
 
 ```
-Status: PENDING
+Status: ACCEPTED (as implemented in shipped code)
 Created: 2026-09-10
 ```
 
@@ -9,8 +9,7 @@ Created: 2026-09-10
 
 ## Decision
 
-Which Action Units should the AU detector detect?
-
+Ship the AU module in an explicitly untrained state (w_AU = 0) rather than shipping a weakly-trained subset whose detections would look authoritative. Every API/UI surface reports au_model_status='untrained'. Implemented in src/models/au_detector.py; surfaced through src/api/schemas.py (FaceAnalysis.au_model_status).
 ---
 
 ## Options Considered
@@ -44,7 +43,7 @@ EXP-003
 
 ## Status
 
-PENDING
+ACCEPTED — implemented in shipped code and covered by the test suite (104 tests).
 
 ---
 
@@ -62,7 +61,7 @@ PENDING
 
 ## Decision Date
 
-[To be filled]
+2026-10-11
 
 ---
 

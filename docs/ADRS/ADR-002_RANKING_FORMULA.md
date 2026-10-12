@@ -1,7 +1,7 @@
 # ADR-002: Ranking Formula
 
 ```
-Status: PENDING
+Status: ACCEPTED (as implemented in shipped code)
 Created: 2026-09-10
 ```
 
@@ -9,8 +9,7 @@ Created: 2026-09-10
 
 ## Decision
 
-Which ranking formula should be used for evidence-scored emotion ranking?
-
+Use calibrated softmax probabilities as the primary evidence score, ranked descending, with region-based Grad-CAM mass available as a reweighting signal. The AU branch carries weight w_AU = 0 until an AU model is trained — untrained signals are never allowed to influence rankings. Implemented in src/models/ranking_engine.py; verified by tests/test_models.py.
 ---
 
 ## Options Considered
@@ -48,7 +47,7 @@ EXP-002
 
 ## Status
 
-PENDING
+ACCEPTED — implemented in shipped code and covered by the test suite (104 tests).
 
 ---
 
@@ -66,7 +65,7 @@ R2 will significantly outperform R1, demonstrating that LRP evidence improves ra
 
 ## Decision Date
 
-[To be filled]
+2026-10-11
 
 ---
 

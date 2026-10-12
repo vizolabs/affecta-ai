@@ -1,7 +1,7 @@
 # ADR-005: Intensity Architecture
 
 ```
-Status: PENDING
+Status: ACCEPTED (as implemented in shipped code)
 Created: 2026-09-10
 ```
 
@@ -9,8 +9,7 @@ Created: 2026-09-10
 
 ## Decision
 
-Which architecture should be used for expression intensity estimation?
-
+Use a distribution-extremity proxy (distance of the probability vector from uniform, scaled 0-100) instead of a separate intensity regressor — RAF-DB provides no intensity ground truth, and a proxy keeps the claim honest. The UI labels it as a proxy, never as a clinical measure. Implemented in src/models/intensity_estimator.py.
 ---
 
 ## Ground Truth Definition
@@ -56,7 +55,7 @@ EXP-005
 
 ## Status
 
-PENDING
+ACCEPTED — implemented in shipped code and covered by the test suite (104 tests).
 
 ---
 
@@ -74,7 +73,7 @@ MLP with feature+AU input will be sufficient and fast.
 
 ## Decision Date
 
-[To be filled]
+2026-10-11
 
 ---
 

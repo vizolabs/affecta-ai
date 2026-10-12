@@ -38,30 +38,32 @@ Login → Session Analytics → Select Session → View Report → Export
 
 ## 3. Feature Priorities
 
+Status as of V1.0 — see docs/00 §13 for the annotated Definition of Done.
+
 ### Must Have (MVP — V0)
-- [ ] Authentication (register/login/logout)
-- [ ] Camera access + face detection
-- [ ] 7-class emotion detection
-- [ ] Emotion ranking
-- [ ] LRP explanation
-- [ ] Multi-face tracking
-- [ ] Basic narrator
+- [x] Authentication (register/login/logout)
+- [x] Camera access + face detection
+- [x] 7-class emotion detection
+- [x] Emotion ranking
+- [x] LRP explanation (offline; Grad-CAM served)
+- [ ] Multi-face tracking — not shipped (single-person mode, max_faces = 1, by design)
+- [x] Basic narrator
 
 ### Should Have (V1)
-- [ ] AU detection (6 AUs)
-- [ ] Intensity estimation
-- [ ] Uncertainty detection
-- [ ] Temporal timeline
-- [ ] Session analytics
-- [ ] PDF report export
-- [ ] Event engine (transitions)
+- [ ] AU detection (6 AUs) — module shipped untrained (w_AU = 0, per ADR-003)
+- [x] Intensity estimation (proxy, ADR-005)
+- [x] Uncertainty detection (ADR-006)
+- [x] Temporal timeline
+- [x] Session analytics
+- [x] PDF report export
+- [x] Event engine (transitions)
 
 ### Nice to Have (V2)
-- [ ] Research Lab mode (full)
-- [ ] Human vs AI comparison
-- [ ] Prediction replay
-- [ ] Model card
-- [ ] Failure mode testing
+- [x] Research Lab mode (photo XAI + video analysis)
+- [ ] Human vs AI comparison — not shipped
+- [ ] Prediction replay — not shipped
+- [x] Model card (Lab Model inspector + registry)
+- [ ] Failure mode testing — not shipped (see docs/17 honest gaps)
 
 ---
 

@@ -29,24 +29,30 @@ export default function LabPage() {
   const [result, setResult] = useState<AnalysisOut | null>(null);
   const [video, setVideo] = useState<VideoAnalysisOut | null>(null);
   const [models, setModels] = useState<ModelInfo[]>([]);
+  const [modelsError, setModelsError] = useState(false);
+  const [modelsLoading, setModelsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const previewRef = useRef<string | null>(null);
 
   const isVideo = file?.type.startsWith("video/") ?? false;
 
-  useEffect(() => {
-    let cancelled = false;
-    apiFetch<ModelInfo[]>("/api/models", {}, token)
+  const loadModels = (tok: string | null) => {
+    setModelsLoading(true);
+    setModelsError(false);
+    apiFetch<ModelInfo[]>("/api/models", {}, tok)
       .then((data) => {
-        if (!cancelled) setModels(data);
+        setModels(data);
       })
       .catch(() => {
-        /* model registry is optional for the lab view */
-      });
-    return () => {
-      cancelled = true;
-    };
+        setModelsError(true);
+      })
+      .finally(() => setModelsLoading(false));
+  };
+
+  useEffect(() => {
+    loadModels(token);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   useEffect(
@@ -124,6 +130,7 @@ export default function LabPage() {
 
   return (
     <div className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-2">
+      <h1 className="sr-only">Research Lab</h1>
       {/* upload */}
       <Card title="Upload">
         <label
@@ -168,7 +175,7 @@ export default function LabPage() {
           <Button onClick={analyze} disabled={!file || busy}>
             {busy
               ? isVideo
-                ? "Analysing video…"
+                ? "Analyzing video…"
                 : "Analyzing…"
               : isVideo
                 ? "Analyze video"
@@ -249,6 +256,12 @@ export default function LabPage() {
           <p className="text-sm text-muted">
             Upload a photo or a video and run Analyze to see predictions,
             ranking, and evidence.
+          </p>
+        )}
+        {result && !primary && !video && (
+          <p className="text-sm text-muted">
+            {error ??
+              "No face was detected in this image. Try a clearer, front-facing photo with a larger face."}
           </p>
         )}
         {video && (
@@ -352,12 +365,26 @@ export default function LabPage() {
 
       {/* model info */}
       <Card title="Model inspector">
-        {models.length === 0 ? (
+        {modelsLoading ? (
           <div className="space-y-2">
             <div className="h-14 animate-pulse rounded-md bg-border/50" />
             <div className="h-14 animate-pulse rounded-md bg-border/50" />
             <div className="h-14 animate-pulse rounded-md bg-border/50" />
           </div>
+        ) : modelsError ? (
+          <div className="space-y-2 text-sm text-muted">
+            <p>
+              Model registry unavailable — is the API running on port 8765?
+            </p>
+            <Button variant="ghost" onClick={() => loadModels(token)}>
+              Retry
+            </Button>
+          </div>
+        ) : models.length === 0 ? (
+          <p className="text-sm text-muted">
+            No models registered yet. Run the training pipeline or seed the
+            registry to populate this list.
+          </p>
         ) : (
           <div className="space-y-3">
             {models.map((m) => {

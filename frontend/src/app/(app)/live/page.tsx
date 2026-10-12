@@ -856,7 +856,7 @@ export default function LivePage() {
     if (overlay) ctx.drawImage(overlay, 0, 0);
     const a = document.createElement("a");
     a.href = out.toDataURL("image/png");
-    a.download = `affecta_snapshot_${Date.now()}.png`;
+    a.download = `hfd_snapshot_${Date.now()}.png`;
     a.click();
     toast.success("Snapshot saved.");
   }, []);
@@ -987,6 +987,7 @@ export default function LivePage() {
 
   return (
     <div className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-3">
+      <h1 className="sr-only">Live Observer</h1>
       {/* hidden helpers */}
       <video ref={videoRef} className="hidden" playsInline muted autoPlay aria-hidden />
       <canvas ref={sendRef} width={CAPTURE_W} height={CAPTURE_H} className="hidden" />

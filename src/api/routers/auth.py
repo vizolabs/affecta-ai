@@ -18,7 +18,18 @@ from src.api.core.security import (
     verify_password,
 )
 from src.api.models import SettingsRow, User
-from src.api.schemas import LoginIn, RegisterIn, TokenOut, UserOut, ok
+from src.api.schemas import (
+    AccountDeletedOut,
+    LoggedOutOut,
+    LoginIn,
+    Ok,
+    RegisterIn,
+    TokenOut,
+    UserOut,
+    ok,
+)
+
+_UNAUTHORIZED = {401: {"description": "Invalid or expired credentials"}}
 
 router = APIRouter()
 
@@ -41,7 +52,7 @@ def _client_key(request: Request) -> str:
     return request.client.host if request.client else "local"
 
 
-@router.post("/api/auth/register", response_model=None)
+@router.post("/api/auth/register", response_model=Ok[TokenOut], responses={409: {"description": "Email already registered"}})
 def register(payload: RegisterIn, db: DBSession = Depends(get_db)):
     existing = db.query(User).filter_by(email=payload.email.lower()).first()
     if existing is not None:
@@ -59,7 +70,7 @@ def register(payload: RegisterIn, db: DBSession = Depends(get_db)):
     return ok(TokenOut(token=token, user=UserOut.model_validate(user)).model_dump())
 
 
-@router.post("/api/auth/login", response_model=None)
+@router.post("/api/auth/login", response_model=Ok[TokenOut], responses={**_UNAUTHORIZED, 429: {"description": "Too many login attempts"}})
 def login(payload: LoginIn, request: Request, db: DBSession = Depends(get_db)):
     key = _client_key(request)
     if _rate_limited(key):
@@ -80,7 +91,7 @@ def login(payload: LoginIn, request: Request, db: DBSession = Depends(get_db)):
 _bearer = HTTPBearer(auto_error=False)
 
 
-@router.post("/api/auth/logout", response_model=None)
+@router.post("/api/auth/logout", response_model=Ok[LoggedOutOut])
 def logout(
     credentials: HTTPAuthorizationCredentials = Depends(_bearer),
     user: User = Depends(get_current_user),
@@ -90,12 +101,12 @@ def logout(
     return ok({"logged_out": True})
 
 
-@router.get("/api/auth/me", response_model=None)
+@router.get("/api/auth/me", response_model=Ok[UserOut], responses=_UNAUTHORIZED)
 def me(user: User = Depends(get_current_user)):
-    return ok(UserOut.model_validate(user).model_dump())
+    return ok(UserOut.model_validate(user))
 
 
-@router.delete("/api/auth/me", response_model=None)
+@router.delete("/api/auth/me", response_model=Ok[AccountDeletedOut], responses=_UNAUTHORIZED)
 def delete_me(
     credentials: HTTPAuthorizationCredentials = Depends(_bearer),
     user: User = Depends(get_current_user),

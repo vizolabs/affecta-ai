@@ -16,6 +16,12 @@ function applyTheme(theme: Theme): void {
   document.documentElement.classList.toggle("dark", theme !== "light");
 }
 
+/** One-time migration: carry the pre-rename key forward so sessions survive. */
+if (typeof window !== "undefined" && !localStorage.getItem("hfd-theme")) {
+  const legacy = localStorage.getItem("affecta-theme");
+  if (legacy) localStorage.setItem("hfd-theme", legacy);
+}
+
 export const useTheme = create<ThemeState>()(
   persist(
     (set, get) => ({
@@ -27,7 +33,7 @@ export const useTheme = create<ThemeState>()(
       },
     }),
     {
-      name: "affecta-theme",
+      name: "hfd-theme",
       onRehydrateStorage: () => (state) => {
         if (state) applyTheme(state.theme);
       },

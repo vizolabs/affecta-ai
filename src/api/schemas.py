@@ -2,7 +2,7 @@
 
 import re
 from datetime import datetime
-from typing import Annotated, Any, List, Literal, Optional
+from typing import Annotated, Any, Generic, List, Literal, Optional, TypeVar
 
 from email_validator import EmailNotValidError, validate_email
 from pydantic import AfterValidator, BaseModel, Field
@@ -51,16 +51,31 @@ class ApiResponse(BaseModel):
     error: Optional[str] = None
 
 
+T = TypeVar("T")
+
+
+class Ok(BaseModel, Generic[T]):
+    """Typed success envelope for OpenAPI (matches the `ok()` helper)."""
+
+    status: str = "success"
+    data: Optional[T] = None
+    meta: Optional[dict] = None
+    error: Optional[str] = None
+
+
 # ---- Auth ----
 class RegisterIn(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=6, max_length=128)
-    full_name: Optional[str] = None
+    # Spec 12: 8-char minimum; 128 max keeps PBKDF2 bounded.
+    password: str = Field(min_length=8, max_length=128)
+    full_name: Optional[str] = Field(default=None, max_length=200)
 
 
 class LoginIn(BaseModel):
     email: EmailStr
-    password: str
+    # Max length is the PBKDF2 DoS guard — a huge password must be
+    # rejected by validation before any hashing runs.
+    password: str = Field(min_length=1, max_length=128)
 
 
 class UserOut(BaseModel):
@@ -128,13 +143,16 @@ class SettingsOut(BaseModel):
 
 
 class SettingsUpdate(BaseModel):
-    theme: Optional[str] = None
+    theme: Optional[Literal["dark", "light"]] = None
     narrator_enabled: Optional[bool] = None
-    narrator_speed: Optional[float] = None
-    narrator_voice: Optional[str] = None
-    narrator_detail: Optional[str] = None
-    ema_alpha: Optional[float] = None
-    xai_frame_interval: Optional[int] = None
+    # Slider range in the UI: 0.5 – 2.0.
+    narrator_speed: Optional[float] = Field(default=None, ge=0.5, le=2.0)
+    narrator_voice: Optional[str] = Field(default=None, max_length=256)
+    narrator_detail: Optional[Literal["calm", "normal", "detailed"]] = None
+    # Clamped to (0, 1]: alpha > 1 makes EMA probabilities invalid
+    # (overshoot/negative weights) — never accept it from the wire.
+    ema_alpha: Optional[float] = Field(default=None, ge=0.05, le=1.0)
+    xai_frame_interval: Optional[int] = Field(default=None, ge=1, le=120)
     # Capture pacing: frames analysed per second (1-15).
     analysis_fps: Optional[int] = Field(default=None, ge=1, le=15)
     # Display dwell in seconds (0 = off).
@@ -174,6 +192,41 @@ class AnalysisOut(BaseModel):
     model: Optional[str] = None
     timeline: Optional[dict] = None
     timestamp: Optional[float] = None
+
+
+# ---- Analytics ----
+class SummaryOut(BaseModel):
+    session_id: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    total_frames: int = 0
+    total_events: int = 0
+    avg_confidence: Optional[float] = None
+    avg_intensity: Optional[float] = None
+    model: Optional[str] = None
+    expression_distribution: dict = {}
+    event_type_counts: dict = {}
+    transition_count: int = 0
+    transition_matrix: dict = {}
+    uncertainty_events: int = 0
+    per_person: dict = {}
+
+
+class TimelineOut(BaseModel):
+    session_id: Optional[str] = None
+    timeline: List[dict] = []
+    events: List[EventOut] = []
+
+
+class LoggedOutOut(BaseModel):
+    logged_out: bool
+
+
+class DeletedOut(BaseModel):
+    deleted: str
+
+
+class AccountDeletedOut(BaseModel):
+    deleted: bool
 
 
 def ok(data: Any, meta: Optional[dict] = None) -> dict:

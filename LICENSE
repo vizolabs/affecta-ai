@@ -1,0 +1,22 @@
+Human Facial Emotion Detection — License
+Copyright (c) 2026. All rights reserved.
+
+Private — Academic Use Only
+
+This repository is provided exclusively for academic and educational purposes
+(the associated final-year project, its evaluation, and related coursework).
+
+Allowed:
+- Viewing, running, and modifying the code for academic study and evaluation.
+- Referencing or citing the work with attribution.
+
+Not allowed (without prior written permission):
+- Commercial use, redistribution, or sale of the code or trained models.
+- Use of the software to make clinical, diagnostic, hiring, surveillance, or
+  other high-stakes decisions about individuals.
+- Removal of the ethics, honesty, or limitation notices embedded in the
+  software, documentation, or generated reports.
+
+The models and metrics described herein are trained and evaluated on the
+RAF-DB dataset, which is subject to its own license and terms of use. This
+software is provided "as is", without warranty of any kind.

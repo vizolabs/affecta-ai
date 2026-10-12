@@ -39,17 +39,9 @@ export default function PersonCard({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      aria-pressed={selected}
+      role="group"
       aria-label={`${personLabel(face.face_id)} ${face.emotion}`}
+      onClick={onSelect}
       className={`cursor-pointer rounded-lg border p-3 transition ${
         selected
           ? "border-accent bg-accent/10"
@@ -57,14 +49,23 @@ export default function PersonCard({
       }`}
     >
       <div className="mb-1 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onSelect();
+          }}
+          aria-pressed={selected}
+          className="flex items-center gap-1.5 text-xs font-semibold text-muted hover:text-foreground"
+        >
           {personLabel(face.face_id)}
+          <span className="sr-only">{selected ? " (selected)" : " (select)"}</span>
           {badge && (
             <span className="rounded border border-border bg-background px-1 py-px text-[9px] font-medium uppercase tracking-wide text-muted">
               {badge}
             </span>
           )}
-        </span>
+        </button>
         <span
           className={`rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase ${certaintyClass}`}
         >

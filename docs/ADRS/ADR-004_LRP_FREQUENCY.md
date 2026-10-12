@@ -1,7 +1,7 @@
 # ADR-004: LRP Frequency
 
 ```
-Status: PENDING
+Status: ACCEPTED (as implemented in shipped code)
 Created: 2026-09-10
 ```
 
@@ -9,8 +9,7 @@ Created: 2026-09-10
 
 ## Decision
 
-How often should LRP be computed in the real-time pipeline?
-
+LRP is offline-only (ml/xai, report generation, benchmarks). The real-time and photo pipelines serve Grad-CAM on demand (XAI inspector, analyze?xai=true) — LRP's per-pixel cost exceeds the latency budget for streamed frames. Implemented: ml/xai/* (offline), src/api/services/inference.py:gradcam (served).
 ---
 
 ## Options Considered
@@ -43,7 +42,7 @@ EXP-004
 
 ## Status
 
-PENDING
+ACCEPTED — implemented in shipped code and covered by the test suite (104 tests).
 
 ---
 
@@ -61,7 +60,7 @@ Option D (every N frames + event-triggered) provides the best balance.
 
 ## Decision Date
 
-[To be filled]
+2026-10-11
 
 ---
 

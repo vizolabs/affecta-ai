@@ -8,7 +8,9 @@ from sqlalchemy.orm import Session as DBSession
 from src.api.core.database import get_db
 from src.api.core.deps import get_current_user
 from src.api.models import SettingsRow, User
-from src.api.schemas import SettingsOut, SettingsUpdate, ok
+from src.api.schemas import Ok, SettingsOut, SettingsUpdate, ok
+
+_UNAUTHORIZED = {401: {"description": "Invalid or expired credentials"}}
 
 router = APIRouter()
 
@@ -22,13 +24,13 @@ def _get_or_create(user: User, db: DBSession) -> SettingsRow:
     return row
 
 
-@router.get("/api/settings", response_model=None)
+@router.get("/api/settings", response_model=Ok[SettingsOut], responses=_UNAUTHORIZED)
 def get_settings(user: User = Depends(get_current_user), db: DBSession = Depends(get_db)):
     row = _get_or_create(user, db)
-    return ok(SettingsOut.model_validate(row).model_dump())
+    return ok(SettingsOut.model_validate(row))
 
 
-@router.put("/api/settings", response_model=None)
+@router.put("/api/settings", response_model=Ok[SettingsOut], responses=_UNAUTHORIZED)
 def update_settings(
     payload: SettingsUpdate,
     user: User = Depends(get_current_user),
@@ -38,4 +40,4 @@ def update_settings(
     for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(row, field, value)
     db.commit()
-    return ok(SettingsOut.model_validate(row).model_dump())
+    return ok(SettingsOut.model_validate(row))

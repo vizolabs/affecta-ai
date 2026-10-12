@@ -185,41 +185,44 @@ See: `18_DEVELOPMENT_ROADMAP.md` for full details.
 
 ## 13. Definition of DONE
 
+Status as of V1.0 (2026-10-11) — checked items are shipped in this repository;
+unchecked items are honest gaps, annotated.
+
 ### AI
-- [ ] 7-class expression recognition
-- [ ] AU detection (6+ AUs)
-- [ ] Evidence-based ranking
-- [ ] Intensity estimation
-- [ ] Confidence calibration
-- [ ] Ambiguity detection
+- [x] 7-class expression recognition (DAN 89.70% / ensemble 89.99% on RAF-DB test)
+- [ ] AU detection (6+ AUs) — module shipped **untrained** (w_AU = 0, status reported everywhere; per ADR-003)
+- [x] Evidence-based ranking (src/models/ranking_engine.py, ADR-002)
+- [x] Intensity estimation (distribution-extremity proxy, ADR-005)
+- [x] Confidence calibration (ECE + temperature scaling, EXP-010)
+- [x] Ambiguity detection (margin + confidence events, ADR-006)
 
 ### XAI
-- [ ] LRP explanation
-- [ ] Region ranking
-- [ ] Grad-CAM comparison
-- [ ] Explanation faithfulness validated
+- [x] LRP explanation (offline only — ml/xai, ADR-004)
+- [x] Region ranking (Grad-CAM mass over geometric regions)
+- [x] Grad-CAM comparison (served via Lab XAI inspector)
+- [x] Explanation faithfulness validated (ml/benchmarks/xai_probe.py)
 
 ### Live System
-- [ ] Camera integration
-- [ ] Multiple face tracking
-- [ ] Temporal smoothing
-- [ ] Expression transitions
-- [ ] Event timeline
+- [x] Camera integration (getUserMedia → WebSocket stream)
+- [ ] Multiple face tracking — **single-person mode by design** (max_faces = 1; multi-face tracking not shipped)
+- [x] Temporal smoothing (EMA, ADR-007)
+- [x] Expression transitions (debounced event engine)
+- [x] Event timeline (sessions + analytics)
 
 ### Product
-- [ ] Authentication
-- [ ] Live Observer mode
-- [ ] Research Lab mode
-- [ ] Session Analytics mode
-- [ ] Report generation
-- [ ] Narrator
+- [x] Authentication (register/login/logout, HMAC bearer tokens)
+- [x] Live Observer mode (verdict mode + continuous)
+- [x] Research Lab mode (photo XAI + video)
+- [x] Session Analytics mode (summary, timeline, exports)
+- [x] Report generation (PDF/JSON/CSV + docx project report)
+- [x] Narrator (event-driven TTS, detail levels)
 
 ### Research
-- [ ] VGG16 baseline
-- [ ] Improved model
-- [ ] Ablation study
-- [ ] Cross-dataset testing
-- [ ] Documented limitations
+- [x] VGG16 baseline (EXP-004-VGG16-CLEAN)
+- [x] Improved model (EfficientNet-B3 → ViT → DDAMFN++ → DAN → 3-model ensemble)
+- [x] Ablation study (TTA on/off, ensemble member subsets, EXP-010)
+- [ ] Cross-dataset testing — **not shipped** (single dataset: RAF-DB; generalization unmeasured)
+- [x] Documented limitations (report §limitations, ADRs, honesty footers)
 
 ---
 

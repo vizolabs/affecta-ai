@@ -1,13 +1,57 @@
 "use client";
 
 import type { ReactNode } from "react";
-import PortalBackdrop from "./PortalBackdrop";
+import { useReducedMotion } from "framer-motion";
+import PortalFace from "./PortalFace";
 
 const TELEMETRY: [string, string][] = [
   ["Inference", "Local · On-device"],
   ["Frames", "Never stored"],
   ["Model", "DAN · Ensemble"],
 ];
+
+/* Card chrome shared with the login page (sf-mono/sf-ui/keyframes come from PortalFace). */
+const CARD_CSS = `
+.sf-card {
+  position: relative;
+  background: rgba(16, 33, 44, 0.6);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(125, 249, 255, 0.2);
+  clip-path: polygon(
+    0 0,
+    calc(100% - 16px) 0,
+    100% 16px,
+    100% 100%,
+    16px 100%,
+    0 calc(100% - 16px)
+  );
+  box-shadow:
+    inset 0 -1px 0 rgba(0, 240, 255, 0.4),
+    inset 0 -30px 50px -30px rgba(0, 240, 255, 0.28);
+}
+.sf-card::before,
+.sf-card::after {
+  content: "";
+  position: absolute;
+  width: 23px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.2), rgba(0, 240, 255, 0.95));
+  pointer-events: none;
+}
+.sf-card::before {
+  top: 0;
+  right: -7px;
+  transform-origin: left center;
+  transform: rotate(45deg);
+}
+.sf-card::after {
+  left: 0;
+  bottom: 16px;
+  transform-origin: left center;
+  transform: rotate(45deg);
+}
+`;
 
 export interface AuthShellProps {
   /** Two-line brand, first line plain, second line accented. */
@@ -39,33 +83,37 @@ export default function AuthShell({
   status = "Offline ready",
   variant = "grid",
 }: AuthShellProps) {
+  const reduced = !!useReducedMotion();
+
   if (variant === "portal") {
     return (
-      <main className="relative flex min-h-screen flex-col overflow-hidden bg-[#04070c] text-white lg:block">
-        {/* Desktop: full-bleed animated face, dimmed on the form side */}
+      <main className="relative flex min-h-screen flex-col overflow-hidden bg-[#020A0E] text-white lg:block">
+        <style>{CARD_CSS}</style>
+
+        {/* Desktop: full-bleed animated face (same identity as the login portal) */}
         <div className="absolute inset-0 hidden lg:block">
           <div className="relative h-full w-full">
-            <PortalBackdrop />
+            <PortalFace reduced={reduced} dimmed />
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(90deg, #04070c 20%, rgba(4,7,12,0.86) 42%, rgba(4,7,12,0.25) 66%, transparent 85%)",
+                  "linear-gradient(90deg, #020A0E 20%, rgba(2,10,14,0.86) 42%, rgba(2,10,14,0.25) 66%, transparent 85%)",
               }}
             />
           </div>
         </div>
 
-        {/* Mobile: portal as a top banner, fading into the page */}
+        {/* Mobile: face as a top banner, fading into the page */}
         <div className="relative h-60 overflow-hidden sm:h-72 lg:hidden">
-          <PortalBackdrop />
+          <PortalFace reduced={reduced} />
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "linear-gradient(180deg, rgba(4,7,12,0.15) 0%, transparent 45%, #04070c 100%)",
+                "linear-gradient(180deg, rgba(2,10,14,0.15) 0%, transparent 45%, #020A0E 100%)",
             }}
           />
         </div>
@@ -89,16 +137,9 @@ export default function AuthShell({
         <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 items-center px-6 py-10 sm:px-10 lg:min-h-screen lg:px-16">
           <section className="w-full max-w-md">
             <header className="mb-7">
-              <div className="flex items-center gap-3">
-                <span className="relative grid h-8 w-8 shrink-0 place-items-center">
-                  <span className="absolute inset-0 rounded-full border border-cyan-300/50" />
-                  <span className="absolute inset-[4px] animate-pulse rounded-full border border-cyan-300/25" />
-                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(103,232,249,0.95)]" />
-                </span>
-                <p className="font-mono text-[10px] uppercase tracking-[0.34em] text-cyan-300/70">
-                  Ranking-based · Explainable AI
-                </p>
-              </div>
+              <p className="font-mono text-[10px] uppercase tracking-[0.34em] text-cyan-300/70">
+                Ranking-based · Explainable AI
+              </p>
               <h1 className="mt-4 text-3xl font-extrabold uppercase leading-[1.05] tracking-wide text-white">
                 {titleLines[0]}
                 <br />
@@ -111,13 +152,7 @@ export default function AuthShell({
               </p>
             </header>
 
-            <div
-              className="hf-rise rounded-xl border border-white/10 bg-black/55 p-7 backdrop-blur-md sm:p-8"
-              style={{
-                boxShadow:
-                  "0 0 60px rgba(34,211,238,0.16), inset 0 1px 0 rgba(255,255,255,0.06)",
-              }}
-            >
+            <div className="sf-card p-6 pt-7 sm:p-8 sm:pt-9 shadow-[0_0_30px_rgba(0,240,255,0.15)]">
               {children}
             </div>
 

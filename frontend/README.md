@@ -1,36 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Frontend — Human Facial Emotion Detection
 
-## Getting Started
+Next.js 15 (App Router) + TypeScript + Tailwind CSS 4. Talks to the FastAPI
+backend in `../src` over REST (`/api/*`) and a WebSocket (`/ws/analyze`).
 
-First, run the development server:
+## Run it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. start the backend (from the repo root)
+make run                      # serves http://127.0.0.1:8765
+
+# 2. start this frontend
+npm install
+npm run dev                   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Production build:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build && npm start
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Type-check (no test runner is configured — see `docs/17_TESTING_QA.md`):
 
-## Learn More
+```bash
+npx tsc --noEmit
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Path | Purpose |
+|------|---------|
+| `src/app/(app)/` | Authenticated pages: dashboard, live, lab, analytics, settings |
+| `src/app/(auth)/` | Login / register portals (shared `PortalFace` component) |
+| `src/app/api/` | Next.js route proxies → backend `127.0.0.1:8765` |
+| `src/components/` | UI (emotion, layout, common, auth) |
+| `src/lib/` | API client, WS client, cadence/timer helpers, types |
+| `src/stores/` | zustand stores (auth, theme — localStorage keys `hfd-*`) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Conventions
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- API base URL is `API_BASE` in `src/lib/api.ts` (default `http://127.0.0.1:8765`).
+- Every fetch goes through `apiFetch`, which attaches the bearer token and
+  redirects to `/login` on 401.
+- The live page streams frames to the backend at ~10 fps; frames are never
+  stored by the backend (see `docs/14_SECURITY_PRIVACY.md`).

@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session as DBSession
 
 from src.api.core.database import get_db
 from src.api.core.deps import get_current_user
 from src.api.models import EventRow, SessionRow, User
-from src.api.schemas import event_out, ok, session_out
+from src.api.schemas import DeletedOut, EventOut, Ok, SessionOut, event_out, ok, session_out
+
+_UNAUTHORIZED = {401: {"description": "Invalid or expired credentials"}}
+_NOT_FOUND = {404: {"description": "Session not found"}}
 
 router = APIRouter()
 
@@ -20,7 +25,7 @@ def _get_owned(session_id: str, user: User, db: DBSession) -> SessionRow:
     return row
 
 
-@router.get("/api/sessions", response_model=None)
+@router.get("/api/sessions", response_model=Ok[List[SessionOut]], responses=_UNAUTHORIZED)
 def list_sessions(user: User = Depends(get_current_user), db: DBSession = Depends(get_db)):
     rows = (
         db.query(SessionRow)
@@ -28,20 +33,28 @@ def list_sessions(user: User = Depends(get_current_user), db: DBSession = Depend
         .order_by(SessionRow.start_time.desc())
         .all()
     )
-    return ok([session_out(r).model_dump(mode="json") for r in rows])
+    return ok([session_out(r) for r in rows])
 
 
-@router.get("/api/sessions/{session_id}", response_model=None)
+@router.get(
+    "/api/sessions/{session_id}",
+    response_model=Ok[SessionOut],
+    responses={**_UNAUTHORIZED, **_NOT_FOUND},
+)
 def get_session(
     session_id: str,
     user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):
     row = _get_owned(session_id, user, db)
-    return ok(session_out(row).model_dump(mode="json"))
+    return ok(session_out(row))
 
 
-@router.get("/api/sessions/{session_id}/events", response_model=None)
+@router.get(
+    "/api/sessions/{session_id}/events",
+    response_model=Ok[List[EventOut]],
+    responses={**_UNAUTHORIZED, **_NOT_FOUND},
+)
 def get_session_events(
     session_id: str,
     user: User = Depends(get_current_user),
@@ -54,10 +67,14 @@ def get_session_events(
         .order_by(EventRow.timestamp.asc())
         .all()
     )
-    return ok([event_out(e).model_dump(mode="json") for e in events])
+    return ok([event_out(e) for e in events])
 
 
-@router.delete("/api/sessions/{session_id}", response_model=None)
+@router.delete(
+    "/api/sessions/{session_id}",
+    response_model=Ok[DeletedOut],
+    responses={**_UNAUTHORIZED, **_NOT_FOUND},
+)
 def delete_session(
     session_id: str,
     user: User = Depends(get_current_user),

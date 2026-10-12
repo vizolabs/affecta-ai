@@ -37,6 +37,7 @@ export default function SettingsPage() {
   const [busy, setBusy] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [armedDelete, setArmedDelete] = useState(false);
+  const [themeEdited, setThemeEdited] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,6 +74,7 @@ export default function SettingsPage() {
     value: UserSettings[K],
   ) => {
     setSaved(false);
+    if (key === "theme") setThemeEdited(true);
     setSettings((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
 
@@ -89,9 +91,10 @@ export default function SettingsPage() {
         token,
       );
       setSettings(data);
-      if (data.theme === "dark" || data.theme === "light") {
+      if (themeEdited && (data.theme === "dark" || data.theme === "light")) {
         setTheme(data.theme);
       }
+      setThemeEdited(false);
       setSaved(true);
       toast.success("Settings saved.");
     } catch (err) {
@@ -133,6 +136,7 @@ export default function SettingsPage() {
 
   return (
     <form onSubmit={submit} className="mx-auto max-w-xl space-y-4">
+      <h1 className="sr-only">Settings</h1>
       <Card title="Account">
         <p className="text-sm">{user?.email ?? "—"}</p>
         <p className="text-xs text-muted">

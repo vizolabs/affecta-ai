@@ -11,6 +11,12 @@ interface AuthState {
   clear: () => void;
 }
 
+/** One-time migration: carry the pre-rename key forward so sessions survive. */
+if (typeof window !== "undefined" && !localStorage.getItem("hfd-auth")) {
+  const legacy = localStorage.getItem("affecta-auth");
+  if (legacy) localStorage.setItem("hfd-auth", legacy);
+}
+
 export const useAuth = create<AuthState>()(
   persist(
     (set) => ({
@@ -19,6 +25,6 @@ export const useAuth = create<AuthState>()(
       setAuth: (token, user) => set({ token, user }),
       clear: () => set({ token: null, user: null }),
     }),
-    { name: "affecta-auth" },
+    { name: "hfd-auth" },
   ),
 );

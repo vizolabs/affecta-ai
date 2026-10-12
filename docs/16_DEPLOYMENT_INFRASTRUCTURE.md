@@ -1,197 +1,123 @@
 # 16 — Deployment Infrastructure
 
 ```
-Status: IMPL-DEPENDENT
+Status: LOCKED
 Version: V1.0
 ```
 
 ---
 
-## 1. Development Environment
+## 1. Development Environment (as shipped)
 
-```yaml
-# docker-compose.dev.yml
-version: '3.8'
-services:
-  frontend:
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/app
-    environment:
-      - DATABASE_URL=postgresql://user:pass@db:5432/affecta
-      - JWT_SECRET=dev-secret
-    
-  db:
-    image: postgres:15
-    ports:
-      - "5432:5432"
-    environment:
-      - POSTGRES_USER=user
-      - POSTGRES_PASSWORD=pass
-      - POSTGRES_DB=affecta
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+Local-first: no containers, no cloud. Two processes on localhost.
 
-volumes:
-  postgres_data:
+```bash
+make run          # API (uvicorn, 127.0.0.1:8765) + web (Next.js, 127.0.0.1:3000)
 ```
+
+Or separately:
+
+```bash
+make serve        # uvicorn src.api.main:app --port 8765
+make serve-web    # cd frontend && npm run dev
+```
+
+- Database: SQLite at `data/app.db` (created automatically; Postgres-compatible
+  SQLAlchemy schema, but Postgres is **not** deployed or required).
+- WebSocket emotion stream is served by the same uvicorn process
+  (`/ws/analyze`), not a separate service.
 
 ---
 
 ## 2. Production Options
 
-### Option A: Vercel + Railway (Recommended)
+**Shipped:** single-machine local run (`make run`) — this is the intended
+deployment. Privacy by design: inference is on-device, frames never leave the
+machine, so a hosted multi-tenant deployment is deliberately out of scope.
 
-```
-Frontend → Vercel (Next.js)
-Backend → Railway (FastAPI)
-Database → Railway PostgreSQL
-```
-
-### Option B: Docker Compose
-
-```
-Frontend → Nginx container
-Backend → Uvicorn container
-Database → PostgreSQL container
-```
-
-### Option C: Cloud (AWS/GCP)
-
-```
-Frontend → S3 + CloudFront
-Backend → EC2/Compute Engine
-Database → RDS/Cloud SQL
-```
+Not shipped (would require work before use): Docker images, cloud deploys
+(Vercel/Railway/AWS), TLS termination. If exposing beyond localhost, put a
+reverse proxy with HTTPS in front of uvicorn and tighten CORS origins.
 
 ---
 
 ## 3. Environment Variables
 
-### Backend
+### Backend (`src/api/core/config.py`)
 
 ```bash
-# Database
-DATABASE_URL=postgresql://user:pass@host:5432/affecta
-
-# Authentication
-JWT_SECRET=your-secret-key
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=15
-REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# ML Models
-MODEL_PATH=/models
-EXPRESSION_MODEL=affecta-expression-v1.pt
-AU_MODEL=affecta-au-v1.pt
-
-# CORS
-CORS_ORIGINS=http://localhost:3000,https://your-domain.com
-
-# Rate Limiting
-RATE_LIMIT_PER_MINUTE=100
+AFFECTA_DB_URL=sqlite:///./data/app.db   # database URL (default SQLite)
+AFFECTA_TOKEN_TTL=604800                 # bearer token TTL seconds (default 7 days)
+AFFECTA_MODEL=dan                        # default production model name
+AFFECTA_WARM_MODEL=1                     # 0 = start without loading weights
+AFFECTA_TRANSITION_DEBOUNCE_SECONDS=1.0  # event debounce window
 ```
 
-### Frontend
+The token secret is generated on first run into `data/.token_secret`
+(gitignored) — no env var needed.
+
+### Frontend (`frontend/.env.local`)
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_WS_URL=ws://localhost:8000
+NEXT_PUBLIC_API_URL=http://127.0.0.1:8765
 ```
 
 ---
 
-## 4. CI/CD Pipeline
+## 4. Quality Gate (CI/CD not shipped)
 
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy
+No hosted CI is configured for this local-first project. The gate before any
+commit is:
 
-on:
-  push:
-    branches: [main]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run tests
-        run: |
-          cd backend && pip install -r requirements.txt
-          pytest tests/
-  
-  deploy:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to Railway
-        run: railway up
+```bash
+make test    # pytest tests/  (104 tests: REST, WebSocket, ML, narrator)
+make lint    # flake8 + mypy (flake8 config in .flake8)
+cd frontend && npm run build
 ```
 
 ---
 
 ## 5. Monitoring
 
-### Health Check Endpoint
+### Health Check Endpoint (as implemented)
 
-```python
-@router.get("/health")
-async def health_check():
-    return {
-        "status": "healthy",
-        "database": check_db_connection(),
-        "ml_models": check_models_loaded(),
-        "version": "1.0.0"
-    }
+`GET /api/health` (src/api/main.py):
+
+```json
+{
+  "status": "success",
+  "data": {
+    "status": "ok",
+    "app": "Human Facial Emotion Detection",
+    "version": "1.0.0",
+    "model": "dan",
+    "model_loaded": true
+  }
+}
 ```
+
+`model_loaded: false` means the API is running degraded (weights not
+installed) — analysis endpoints return 503 with a pointer to the README.
 
 ### Logging
 
-```python
-import logging
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-```
+`logging.basicConfig(level=INFO)` in `src/api/main.py`; model load failures
+are logged with stack traces at startup. Structured request logging is not
+shipped.
 
 ---
 
 ## 6. Model Deployment
 
-### Model Files
+Checkpoints are **not** redistributed in the repository. Expected paths
+(`ml/models/production.py:DEFAULT_CKPTS`):
 
 ```
-models/
-├── affecta-expression-v1.pt      # Expression classifier
-├── affecta-au-v1.pt              # AU detector
-├── lrp_config.json               # LRP configuration
-└── model_registry.json           # Model metadata
+data/raw/dan_weights/RAF-DB.pth                                    # DAN (serving default)
+experiments/EXP-009-DDAMFN-PP/checkpoints/rafdb_epoch20_acc0.9204_bacc0.8617.pth
+experiments/EXP-008-VIT-SMALL/checkpoints/best.pt
+experiments/EXP-007-EFFICIENTNET-B3/checkpoints/best.pt
 ```
 
-### Loading
-
-```python
-class ModelManager:
-    def __init__(self, model_path):
-        self.expression_model = self.load_model(f"{model_path}/expression.pt")
-        self.au_model = self.load_model(f"{model_path}/au.pt")
-    
-    def load_model(self, path):
-        model = torch.load(path)
-        model.eval()
-        return model
-```
+See README “Data & weights” for acquisition steps. Without weights the app
+still starts; the header chip reports the degraded state.

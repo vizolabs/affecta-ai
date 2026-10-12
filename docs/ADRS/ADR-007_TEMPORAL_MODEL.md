@@ -1,7 +1,7 @@
 # ADR-007: Temporal Model
 
 ```
-Status: PENDING
+Status: ACCEPTED (as implemented in shipped code)
 Created: 2026-09-10
 ```
 
@@ -9,8 +9,7 @@ Created: 2026-09-10
 
 ## Decision
 
-Which temporal model should be used for expression smoothing and transition detection?
-
+Exponential moving average smoothing on the probability vector (user-configurable alpha 0.05-1.0, default 0.35) plus debounced enter/exit event detection, and for periodic mode a recency-weighted window verdict (exp decay, tau = max(2s, span/3)) with runner-up reporting below 40% confidence. No RNN/LSTM: no sequence ground truth exists in RAF-DB and the latency budget forbids it. Implemented in src/models/temporal_engine.py, src/models/event_engine.py, frontend/src/lib/verdict.ts.
 ---
 
 ## Options Considered
@@ -60,7 +59,7 @@ EXP-007
 
 ## Status
 
-PENDING
+ACCEPTED — implemented in shipped code and covered by the test suite (104 tests).
 
 ---
 
@@ -78,7 +77,7 @@ EMA (Option A) will be sufficient for V1, with LSTM as future improvement.
 
 ## Decision Date
 
-[To be filled]
+2026-10-11
 
 ---
 

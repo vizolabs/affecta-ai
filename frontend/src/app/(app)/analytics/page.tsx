@@ -29,7 +29,7 @@ import {
   personLabel,
   pct,
 } from "../../../lib/emotions";
-import { formatDuration, sessionLabel, slug } from "../../../lib/sessions";
+import { formatSessionDuration, sessionLabel, slug } from "../../../lib/sessions";
 import type {
   AnalyticsTimeline,
   SessionOut,
@@ -423,7 +423,7 @@ function AnalyticsInner() {
         `/api/analytics/export/${selected}?format=${format}`,
         token,
       );
-      const name = `affecta_${slug(sessionLabel(selectedSession))}_${dateStamp(
+      const name = `hfd_${slug(sessionLabel(selectedSession))}_${dateStamp(
         new Date(selectedSession.start_time),
       )}.${format}`;
       saveBlob(blob, name);
@@ -460,6 +460,7 @@ function AnalyticsInner() {
 
   return (
     <div className="mx-auto grid max-w-7xl gap-4 lg:grid-cols-4">
+      <h1 className="sr-only">Session Analytics</h1>
       {/* session list */}
       <Card title="Sessions" className="lg:col-span-1">
         {listError && (
@@ -513,7 +514,7 @@ function AnalyticsInner() {
                 </span>
                 <span className="text-muted">
                   {new Date(s.start_time).toLocaleString()} ·{" "}
-                  {formatDuration(s.duration_seconds)} · {s.total_events}{" "}
+                  {formatSessionDuration(s.duration_seconds)} · {s.total_events}{" "}
                   events
                 </span>
               </button>
@@ -604,7 +605,7 @@ function AnalyticsInner() {
               <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
                 {(
                   [
-                    ["Duration", formatDuration(summary.duration_seconds), formatDuration(prevSummary?.duration_seconds)],
+                    ["Duration", formatSessionDuration(summary.duration_seconds), formatSessionDuration(prevSummary?.duration_seconds)],
                     ["Frames", String(summary.total_frames), prevSummary ? String(prevSummary.total_frames) : null],
                     ["Events", String(summary.total_events), prevSummary ? String(prevSummary.total_events) : null],
                     ["Model", summary.model ?? "—", prevSummary?.model ?? null],

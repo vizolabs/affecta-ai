@@ -75,9 +75,9 @@ export default function RegisterPage() {
             label="Passphrase"
             type="password"
             required
-            minLength={6}
+            minLength={8}
             autoComplete="new-password"
-            placeholder="min. 6 characters"
+            placeholder="min. 8 characters"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />

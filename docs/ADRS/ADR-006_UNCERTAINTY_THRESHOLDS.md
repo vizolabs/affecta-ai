@@ -1,7 +1,7 @@
 # ADR-006: Uncertainty Thresholds
 
 ```
-Status: PENDING
+Status: ACCEPTED (as implemented in shipped code)
 Created: 2026-09-10
 ```
 
@@ -9,8 +9,7 @@ Created: 2026-09-10
 
 ## Decision
 
-What thresholds should be used for the uncertainty/ambiguity engine?
-
+Drive ambiguity events from the top-2 probability margin and calibrated confidence (ambiguity_enter / confidence_drop), debounced through the event engine so single noisy frames never flip state. Thresholds live in src/models/event_engine.py; uncertainty events are counted in the analytics summary (docs/15).
 ---
 
 ## Options Considered
@@ -58,7 +57,7 @@ EXP-006
 
 ## Status
 
-PENDING
+ACCEPTED — implemented in shipped code and covered by the test suite (104 tests).
 
 ---
 
@@ -76,7 +75,7 @@ Data-driven thresholds (Option B) will outperform initial guesses.
 
 ## Decision Date
 
-[To be filled]
+2026-10-11
 
 ---
 

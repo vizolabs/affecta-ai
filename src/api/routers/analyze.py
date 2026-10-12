@@ -19,6 +19,12 @@ router = APIRouter()
 
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
 
+_UNAUTHORIZED = {401: {"description": "Invalid or expired credentials"}}
+_NO_MODEL = {
+    401: _UNAUTHORIZED[401],
+    503: {"description": "Model weights not installed on this server (see README)"},
+}
+
 
 def _require_model(service) -> None:
     if not getattr(service, "loaded", False):
@@ -31,7 +37,7 @@ def _require_model(service) -> None:
         )
 
 
-@router.post("/api/analyze", response_model=None)
+@router.post("/api/analyze", response_model=None, responses=_NO_MODEL)
 async def analyze(
     request: Request,
     file: UploadFile = File(...),
@@ -83,7 +89,7 @@ def _user_sample_fps(user_id: str, override: Optional[int] = None) -> int:
     return max(1, min(int(fps or 5), 10))
 
 
-@router.post("/api/analyze/video", response_model=None)
+@router.post("/api/analyze/video", response_model=None, responses=_NO_MODEL)
 async def analyze_video_upload(
     request: Request,
     file: UploadFile = File(...),
