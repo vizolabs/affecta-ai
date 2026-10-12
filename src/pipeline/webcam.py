@@ -1,4 +1,4 @@
-"""Real-time webcam emotion detection for AFFECTA AI.
+"""Real-time webcam emotion detection for Human Facial Emotion Detection.
 
 Runs a production classifier (DAN / DDAMFN++ / ViT / EffNet-B3) on a live
 camera stream with Haar-cascade face detection, EMA-smoothed probabilities,
@@ -21,13 +21,13 @@ import json
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
 import torch
 
-from src.core.config import EMOTIONS, InferenceConfig
+from src.core.config import EMOTIONS
 from ml.models.production import load_production, build_transform
 
 EMOTION_COLORS = {
@@ -113,7 +113,6 @@ class GradCamOverlay:
     @torch.inference_mode()
     def __call__(self, face_bgr: np.ndarray, target_class: Optional[int] = None) -> np.ndarray:
         from PIL import Image
-        from ml.models.production import build_transform  # reuse model transform
         size = self.model.input_size
         rgb = cv2.cvtColor(face_bgr, cv2.COLOR_BGR2RGB)
         from torchvision import transforms
@@ -221,7 +220,10 @@ def run_live(args, predictor: EmotionPredictor, detector: FaceDetector) -> int:
     cam_engine = GradCamOverlay(predictor.model, predictor.device) if args.cam else None
     show_cam = args.cam
     fps_ema = 0.0
-    print('AFFECTA webcam live — q/ESC quit, c toggle Grad-CAM, s snapshot')
+    frame_budget = 1.0 / args.fps if args.fps and args.fps > 0 else 0.0
+    print('Human Facial Emotion Detection webcam live — q/ESC quit, c toggle Grad-CAM, s snapshot')
+    if frame_budget:
+        print(f'[webcam] paced at {args.fps:g} fps', file=sys.stderr)
     try:
         while True:
             t0 = time.perf_counter()
@@ -242,9 +244,14 @@ def run_live(args, predictor: EmotionPredictor, detector: FaceDetector) -> int:
             dt = time.perf_counter() - t0
             inst = 1.0 / max(dt, 1e-6)
             fps_ema = inst if fps_ema == 0 else 0.9 * fps_ema + 0.1 * inst
+            if frame_budget:
+                # Pace the loop so analysis runs at the requested rate.
+                remaining = frame_budget - (time.perf_counter() - t0)
+                if remaining > 0:
+                    time.sleep(remaining)
             if writer is not None:
                 writer.write(frame)
-            cv2.imshow('AFFECTA AI', frame)
+            cv2.imshow('Human Facial Emotion Detection', frame)
             key = cv2.waitKey(1) & 0xFF
             if key in (ord('q'), 27):
                 break
@@ -263,7 +270,7 @@ def run_live(args, predictor: EmotionPredictor, detector: FaceDetector) -> int:
 
 
 def build_argparser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(description='AFFECTA AI webcam emotion detection')
+    p = argparse.ArgumentParser(description='Human Facial Emotion Detection webcam emotion detection')
     p.add_argument('--model', default='dan', choices=['dan', 'ddamfn', 'vit_small', 'efficientnet_b3'],
                    help='production model (default: dan, 89.70%% RAF-DB test)')
     p.add_argument('--ckpt', default=None, help='override checkpoint path')
@@ -272,6 +279,9 @@ def build_argparser() -> argparse.ArgumentParser:
     p.add_argument('--width', type=int, default=640)
     p.add_argument('--height', type=int, default=480)
     p.add_argument('--ema', type=float, default=0.35, help='EMA smoothing (0..1, higher = more responsive)')
+    p.add_argument('--fps', type=float, default=0.0,
+                   help='target analysis frame rate; 0 = uncapped (default). '
+                        'Lower values pace the loop to cut CPU/heat.')
     p.add_argument('--max-faces', type=int, default=5)
     p.add_argument('--cam', action='store_true', help='Grad-CAM overlay')
     p.add_argument('--save', default=None, help='save live video to .mp4 path')

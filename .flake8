@@ -1,0 +1,21 @@
+[flake8]
+max-line-length = 120
+# Whitespace-only style nits are ignored across the legacy research code
+# (ml/, src/models/) — the vendored third-party models are excluded entirely.
+extend-ignore = E111,E117,E128,E202,E225,E231,E251,E261,E265,E301,E302,E303,E305,E501,E741,W291,W292,W293,W391,W503,E203
+exclude =
+    .git,
+    .venv,
+    venv,
+    __pycache__,
+    node_modules,
+    frontend,
+    data,
+    experiments,
+    notebooks,
+    study_timer,
+    .pytest_cache,
+    # Vendored third-party model implementations (attribution in README)
+    ml/models/dan.py,
+    ml/models/ddam.py,
+    ml/models/mixed_feature_net.py

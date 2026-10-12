@@ -1,1 +1,1 @@
-"""XAI modules for AFFECTA AI."""
+"""XAI modules for Human Facial Emotion Detection."""

@@ -1,1 +1,1 @@
-"""Training scripts for AFFECTA AI models."""
+"""Training scripts for Human Facial Emotion Detection models."""

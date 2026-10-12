@@ -14,6 +14,11 @@ data/processed/
 data/raw/
 data/splits/
 
+# Runtime data (local SQLite DB + token secret)
+data/*.db
+data/*.db-*
+data/.token_secret
+
 # Model artifacts / checkpoints
 *.pt
 *.pth

@@ -6,7 +6,6 @@ EarlyStopping matches the in-trainer implementation used by EXP-004/005
 
 from __future__ import annotations
 
-import copy
 from typing import Dict, List, Optional
 
 import torch

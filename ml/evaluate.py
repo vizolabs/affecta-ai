@@ -1,4 +1,4 @@
-"""Standalone test evaluation script for AFFECTA AI.
+"""Standalone test evaluation script for Human Facial Emotion Detection.
 
 Usage:
     python3 -m ml.evaluate --experiment-dir experiments/EXP-008-VIT-SMALL --split test
@@ -20,14 +20,9 @@ from sklearn.metrics import (
     accuracy_score,
 )
 
-from src.core.config import EMOTIONS, NUM_EMOTIONS, PROJECT_ROOT
+from src.core.config import EMOTIONS
 from src.models.expression_classifier import get_expression_model
 from ml.data.dataset import create_dataloaders
-from ml.training.checkpoint import (
-    load_checkpoint,
-    save_confusion_matrix,
-    save_metrics,
-)
 
 
 def evaluate(
@@ -207,7 +202,7 @@ def main():
     print(f"\nEvaluating on {split_name} set ({len(loader.dataset)} samples)...")
     
     # Criterion
-    criterion = nn.CrossEntropyLoss()
+    nn.CrossEntropyLoss()
     
     # Evaluate
     metrics = evaluate(model, loader, nn.CrossEntropyLoss(), device)
@@ -219,13 +214,13 @@ def main():
     print(f"Accuracy:      {metrics['accuracy']:.2f}%")
     print(f"Macro-F1:      {metrics['macro_f1']:.2f}%")
     print(f"Loss:          {metrics['loss']:.4f}")
-    print(f"\nPer-class F1:")
+    print("\nPer-class F1:")
     for emotion, f1 in metrics['per_class_f1'].items():
         print(f"  {emotion:10s}: {f1:.2f}%")
     
     # Confusion matrix
     cm = np.array(metrics['confusion_matrix'])
-    print(f"\nConfusion Matrix:")
+    print("\nConfusion Matrix:")
     print(f"{'':10s}", end="")
     for e in EMOTIONS:
         print(f"{e[:5]:>6s}", end="")
@@ -282,7 +277,7 @@ def main():
         )
         print(f"Saved confusion matrix to: {output_dir / split_name / 'confusion_matrix.png'}")
     
-    print(f"\nDone!")
+    print("\nDone!")
     return 0
 
 

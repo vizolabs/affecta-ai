@@ -9,7 +9,7 @@ from PIL import Image
 import numpy as np
 import json
 from datetime import datetime
-from typing import Tuple, List
+from typing import Tuple
 
 from src.core.config import ACTION_UNITS, MODELS_DIR
 from src.models.au_detector import AUDetector
@@ -118,7 +118,7 @@ def train_au_model(
     best_val_f1 = 0
     history = {'train_loss': [], 'val_loss': [], 'val_f1': []}
     
-    print(f"\nTraining AU detector")
+    print("\nTraining AU detector")
     print("-" * 50)
     
     for epoch in range(epochs):

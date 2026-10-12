@@ -16,11 +16,9 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import List
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from PIL import Image
 from sklearn.metrics import accuracy_score, f1_score, classification_report, confusion_matrix
 from torch.utils.data import DataLoader, Dataset

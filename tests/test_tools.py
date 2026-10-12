@@ -1,7 +1,6 @@
 """Regression tests for prep tools: LRP, calibration, RAF-DB converter, evaluate."""
 
 import numpy as np
-import pytest
 import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader

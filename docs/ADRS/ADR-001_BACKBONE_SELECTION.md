@@ -10,7 +10,7 @@ Updated: 2026-09-23 19:30
 
 ## Decision
 
-Which CNN backbone is used for the AFFECTA expression classifier and, therefore,
+Which CNN backbone is used for the Human Facial Emotion Detection expression classifier and, therefore,
 for the ranking / AU / XAI / intensity / temporal research core built on top of it.
 
 ---
@@ -61,7 +61,7 @@ pretrained at that resolution); VGG16/ResNet-50 use 224×224.
 ## Evaluation Criteria (revised)
 
 Primary criterion is Macro-F1 (FER2013 is imbalanced; accuracy alone hides minority-class
-failure). Secondary criteria cover product fit for the real-time AFFECTA system.
+failure). Secondary criteria cover product fit for the real-time Human Facial Emotion Detection system.
 
 | Order | Criterion | Weight | Description |
 |-------|-----------|--------|-------------|
@@ -197,7 +197,7 @@ Updated: 2026-09-23 19:30
 1. **ViT-Small (EXP-008) has the highest measured accuracy** (78.88% / 70.05% test
    with extended fine-tune + TTA) and is the clear winner on pure F1/accuracy.
 2. **EfficientNet-B3 (EXP-007) wins on latency/memory deployability** (native
-   300×300, lower peak RSS) which matters for the real-time AFFECTA edge core; its
+   300×300, lower peak RSS) which matters for the real-time Human Facial Emotion Detection edge core; its
    raw accuracy is lower but it is under-trained (finance: same 30-ep schedule and
    a resume with extended tail was launched; results supersede the table above).
 3. **The 2-model ensemble** adds diversity (CNN + transformer) and trades a few

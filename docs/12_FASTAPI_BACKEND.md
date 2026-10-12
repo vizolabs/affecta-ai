@@ -111,6 +111,54 @@ async def export_report(session_id: UUID, format: str = "pdf"):
     pass
 ```
 
+### Research Lab (photo + video)
+
+```python
+@router.post("/api/analyze")                 # single photo (max 8 MB)
+async def analyze(file: UploadFile, xai: bool = False, face_id: int = 0):
+    """One frame through the live pipeline + optional Grad-CAM."""
+    pass
+
+@router.post("/api/analyze/video")           # clip (max 60 MB, ≤ 120 s)
+async def analyze_video_upload(
+    file: UploadFile,
+    sample_fps: int = 0,          # 0 = use the user's analysis_fps setting (≤ 10)
+    debounce_seconds: float = -1, # < 0 = use the live-stream debounce (1.0 s)
+):
+    """Offline run over a clip: distribution, transitions, timeline,
+    narration, peak frame + its Grad-CAM. Not persisted as a session."""
+    pass
+```
+
+Video path notes:
+
+- Decoded with OpenCV into a temporary file that is deleted immediately; frames
+  are analysed in memory and never stored.
+- Each sampled frame goes through the *same* `SessionAnalysis` pipeline as the
+  WebSocket stream (tracker → EMA → evidence ranking → event engine → narrator),
+  so photo, video and live results are directly comparable.
+- `transition_debounce_seconds` matches the live value by default so per-frame
+  flicker (A→B→A) is not reported as real transitions; pass `0` to study raw flips.
+- Frames with no detected face produce **no** classification. The response
+  reports `face_coverage` so a poor crop is visible instead of fabricated.
+
+### WebSocket query parameters
+
+The stream accepts capture-cadence parameters and records them in the session
+metadata so exports state what actually produced a run:
+
+| Param | Meaning | Recorded as |
+|-------|---------|--------------|
+| `fps` | live-mode capture rate (clamped 1–15) | `applied_fps` |
+| `mode` | `live` or `periodic` (unknown → live) | `analysis_mode` |
+| `interval` | periodic verdict-window seconds (clamped 30–600) | `applied_interval_seconds` (`null` in live mode) |
+| `motion` | `1`/`0` motion trigger | `motion_trigger` (`false` in live mode) |
+| `title` | session title | `title` |
+| `xai_interval` | Grad-CAM cadence override | — |
+
+Cadence is enforced **client-side**; the server analyses whatever frames it
+receives and trusts nothing beyond the clamps above.
+
 ### Settings
 
 ```python

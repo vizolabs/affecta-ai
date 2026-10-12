@@ -1,7 +1,6 @@
 """Evidence-scored ranking engine."""
 
 from typing import Dict, Optional, List
-import numpy as np
 
 from src.core.config import EMOTIONS, AU_TO_EMOTION
 

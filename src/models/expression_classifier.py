@@ -5,7 +5,7 @@ import torch.nn as nn
 import torchvision.models as models
 from typing import List
 
-from src.core.config import NUM_EMOTIONS, VGG16_INPUT_SIZE, RESNET_INPUT_SIZE
+from src.core.config import NUM_EMOTIONS
 
 
 class StagedBackbone(nn.Module):

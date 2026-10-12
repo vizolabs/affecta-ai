@@ -21,7 +21,7 @@ see compute_conservation. Maps are stable and bounded.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 
 class LRPEpsilon:

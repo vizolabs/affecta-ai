@@ -5,7 +5,7 @@ import numpy as np
 import random
 import os
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 
 
 def save_checkpoint(
@@ -73,7 +73,7 @@ def save_checkpoint(
         if hasattr(torch, 'mps') and torch.backends.mps.is_available():
             try:
                 rng_states['mps_rng_state'] = torch.mps.get_rng_state()
-            except:
+            except Exception:
                 pass
     
     checkpoint = {
@@ -162,7 +162,7 @@ def load_checkpoint(
         if hasattr(torch, 'mps') and torch.backends.mps.is_available() and 'mps_rng_state' in rng:
             try:
                 torch.mps.set_rng_state(rng['mps_rng_state'])
-            except:
+            except Exception:
                 pass
     
     return {

@@ -1,1 +1,1 @@
-"""Evaluation modules for AFFECTA AI."""
+"""Evaluation modules for Human Facial Emotion Detection."""

@@ -28,7 +28,7 @@ MAX_WAIT_SECONDS = 16 * 3600
 
 def trainer_running(exp_id: str) -> bool:
     out = subprocess.run(
-        ['pgrep', '-f', f'train_expression.py --backbone'],
+        ['pgrep', '-', 'train_expression.py --backbone'],
         capture_output=True,
         text=True,
     )

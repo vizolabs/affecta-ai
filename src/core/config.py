@@ -1,8 +1,7 @@
-"""Core configuration for AFFECTA AI."""
+"""Core configuration for Human Facial Emotion Detection."""
 
 from pathlib import Path
 from dataclasses import dataclass
-from typing import List, Optional
 
 
 # Project paths

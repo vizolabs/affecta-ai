@@ -218,6 +218,57 @@ def slow_path(frame, track, target_class):
 | 4-6 faces | ≥ 10 FPS | Stretch target |
 | 7-10 faces | Stress test | May degrade |
 
+### Configurable Capture Rate
+
+The upstream capture/analysis cadence is user-configurable (Settings → *Capture &
+display*).
+
+**Live mode** (default): the live page captures at `analysis_fps` (1–15 fps,
+default 8) and sends a frame per interval. The value travels as the `fps`
+WebSocket query parameter and is recorded in session metadata as `applied_fps`.
+
+**Periodic mode** (`analysis_mode = "periodic"`): frames keep streaming at
+`analysis_fps` exactly like live mode; the difference is on the display side.
+Every `analysis_interval_seconds` (30–600 s, default 120 = 2:00) the readings
+collected during the window are mean-pooled into one **pinned verdict** on the
+face — dominant emotion + pooled confidence + mean box + mean region evidence.
+A pooled top-1 below 40% pins `UNCERTAIN` instead. Sent as the `interval`
+parameter and recorded as `applied_interval_seconds`.
+
+- Standalone module: `python -m src.pipeline.webcam --fps 5` paces the loop by
+  sleeping the remainder of each frame budget (`--fps 0` = uncapped).
+- The server does not throttle; it processes whatever cadence the client uses.
+  Aggregation is entirely client-side (`frontend/src/lib/verdict.ts`).
+
+#### Motion trigger (periodic mode)
+
+`motion_trigger_enabled` adds a cheap client-side movement check: the frame is
+downscaled to 64×48 grayscale and compared with the previous sample (mean
+absolute difference, normalised). Above the threshold the current window is
+flushed immediately into an early verdict, with a 5-second cooldown so one
+movement cannot storm the schedule. No model inference is spent on the check
+itself, and motion only *accelerates* the schedule — it never replaces it.
+
+#### Honesty in periodic mode
+
+The face box shows the pinned verdict for the current window (labelled
+`VERDICT · JOY 74% · window n=…`). When the face leaves the frame the verdict
+is frozen at reduced opacity with a `STALE` marker — never presented as a live
+reading — and re-acquiring the face flushes a fresh verdict within a few
+frames instead of waiting for the next boundary. The Live bar shows the
+**countdown to the next verdict flush** and the current window size.
+
+### Display Dwell (Emotion Hold)
+
+A presentation-only control (Settings → **Emotion hold**, 0–600 s, default
+0 = off; shown in minutes above 60 s). When the dominant emotion changes, the
+previously detected emotion stays painted on the canvas for that long, marked
+with a countdown bar. Readings that arrive *during* a hold are not replayed late
+or queued — when the hold expires only the newest available reading is shown.
+It does **not** affect inference, event detection, narration, or the Person
+panel, which continue to report live values — it is a readability aid for
+viewers, not a smoothing filter on the data.
+
 ---
 
 ## 8. XAI Trigger Conditions

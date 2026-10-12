@@ -13,7 +13,6 @@ from src.models.intensity_estimator import get_intensity_estimator
 from src.models.uncertainty_engine import get_uncertainty_engine
 from src.models.temporal_engine import get_temporal_engine
 from ml.xai.lrp import get_lrp_engine
-from ml.xai.region_mapping import aggregate_relevance_by_region
 
 
 class InferencePipeline:

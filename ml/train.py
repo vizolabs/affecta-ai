@@ -1,8 +1,7 @@
-"""Main training entry point for AFFECTA AI models."""
+"""Main training entry point for Human Facial Emotion Detection models."""
 
 import argparse
 import sys
-from pathlib import Path
 
 from src.core.config import ModelConfig
 from ml.training.train_expression import train_expression_model
@@ -10,7 +9,7 @@ from ml.training.train_expression import train_expression_model
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Train AFFECTA AI models'
+        description='Train Human Facial Emotion Detection models'
     )
     
     parser.add_argument(
@@ -100,7 +99,7 @@ def main():
     
     if args.mode == 'expression':
         print("="*60)
-        print("AFFECTA AI - Expression Classifier Training")
+        print("Human Facial Emotion Detection - Expression Classifier Training")
         print("="*60)
         print(f"Backbone: {args.backbone}")
         print(f"Experiment: {args.experiment_id}")
@@ -127,7 +126,7 @@ def main():
             resume_from=args.resume
         )
         
-        print(f"\nTraining complete!")
+        print("\nTraining complete!")
         print(f"Best Val Macro-F1: {results['best_val_macro_f1']:.2f}%")
         print(f"Test Macro-F1: {results['test_macro_f1']:.2f}%")
         

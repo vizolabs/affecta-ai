@@ -1,0 +1,135 @@
+"use client";
+
+import type { FaceAnalysis } from "../../lib/types";
+import {
+  EMOTION_EMOJI,
+  EMOTION_LABEL,
+  emotionColor,
+  personLabel,
+  pct,
+} from "../../lib/emotions";
+
+interface Props {
+  face: FaceAnalysis;
+  selected: boolean;
+  onSelect: () => void;
+  onWhy: () => void;
+  onHeatmap: () => void;
+  /** Small contextual chip (e.g. "live frame" in periodic/verdict mode). */
+  badge?: string;
+}
+
+const CERTAINTY_STYLE: Record<string, string> = {
+  certain: "bg-emerald-500/15 text-emerald-400 border-emerald-500/40",
+  uncertain: "bg-amber-500/15 text-amber-400 border-amber-500/40",
+  ambiguous: "bg-red-500/15 text-red-400 border-red-500/40",
+};
+
+export default function PersonCard({
+  face,
+  selected,
+  onSelect,
+  onWhy,
+  onHeatmap,
+  badge,
+}: Props) {
+  const color = emotionColor(face.emotion);
+  const certaintyClass =
+    CERTAINTY_STYLE[face.certainty] ?? CERTAINTY_STYLE.uncertain;
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-pressed={selected}
+      aria-label={`${personLabel(face.face_id)} ${face.emotion}`}
+      className={`cursor-pointer rounded-lg border p-3 transition ${
+        selected
+          ? "border-accent bg-accent/10"
+          : "border-border bg-surface hover:border-border/80"
+      }`}
+    >
+      <div className="mb-1 flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+          {personLabel(face.face_id)}
+          {badge && (
+            <span className="rounded border border-border bg-background px-1 py-px text-[9px] font-medium uppercase tracking-wide text-muted">
+              {badge}
+            </span>
+          )}
+        </span>
+        <span
+          className={`rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase ${certaintyClass}`}
+        >
+          {face.certainty}
+        </span>
+      </div>
+
+      <div className="flex items-baseline gap-2">
+        <span className="text-2xl" aria-hidden>
+          {EMOTION_EMOJI[face.emotion] ?? "🙂"}
+        </span>
+        <span
+          className="text-lg font-bold uppercase"
+          style={{ color }}
+        >
+          {EMOTION_LABEL[face.emotion] ?? face.emotion}
+        </span>
+      </div>
+
+      <dl className="mt-2 space-y-1 text-xs">
+        <div className="flex justify-between">
+          <dt className="text-muted">Confidence</dt>
+          <dd className="font-medium">{pct(face.confidence)}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-muted">Intensity</dt>
+          <dd className="font-medium">
+            {Math.round(face.intensity)}
+            <span className="text-muted"> ({face.intensity_category})</span>
+          </dd>
+        </div>
+        <div className="h-1.5 w-full overflow-hidden rounded bg-border">
+          <div
+            className="h-full rounded"
+            style={{
+              width: `${Math.min(100, face.intensity)}%`,
+              backgroundColor: color,
+            }}
+            aria-hidden
+          />
+        </div>
+      </dl>
+
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onWhy();
+          }}
+          className="flex-1 rounded border border-border px-2 py-1 text-xs hover:bg-border/50"
+        >
+          Why?
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onHeatmap();
+          }}
+          className="flex-1 rounded border border-border px-2 py-1 text-xs hover:bg-border/50"
+        >
+          Heatmap
+        </button>
+      </div>
+    </div>
+  );
+}

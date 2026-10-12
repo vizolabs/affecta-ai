@@ -1,4 +1,4 @@
-"""ML models for AFFECTA AI."""
+"""ML models for Human Facial Emotion Detection."""
 
 from src.models.expression_classifier import (
     VGG16ExpressionClassifier,

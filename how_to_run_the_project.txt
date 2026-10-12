@@ -1,0 +1,208 @@
+================================================================================
+Human Facial Emotion Detection — HOW TO RUN THE PROJECT (Windows, full product: API + Web app)
+================================================================================
+
+Project : "A Ranking-Based Explainable AI Model for Human Facial Emotion
+           Detection"
+Source  : Full project zip (includes code, model weights, dataset, experiments)
+Target  : Windows laptop
+Result  : Browser UI at http://127.0.0.1:3000 (login, Lab, Live camera,
+          Analytics, Dashboard, Settings)
+
+
+--------------------------------------------------------------------------------
+0. WHAT'S IN THE ZIP (no need to re-download anything)
+--------------------------------------------------------------------------------
+  - src/                 FastAPI backend (Python)
+  - frontend/            Next.js web app (TypeScript)
+  - ml/, scripts/, tests/  ML code + test suite
+  - data/raw/dan_weights/RAF-DB.pth        DAN model weights (151 MB) — REQUIRED
+  - data/raw/rafdb/, data/processed/rafdb/ RAF-DB dataset splits
+  - data/affecta.db, data/.token_secret    SQLite DB + auth secret (if present,
+                                           old accounts/sessions carry over)
+  - experiments/         Trained checkpoints + result JSONs
+  - docs/                Specs + ADRs
+  - frontend/.env.local  API URL config (already points to 127.0.0.1:8765)
+
+  NOTE: The macOS .venv, frontend/node_modules, and frontend/.next folders in
+  the zip do NOT work on Windows — you recreate them in steps 2 and 3 below.
+
+
+--------------------------------------------------------------------------------
+1. PREREQUISITES (install once)
+--------------------------------------------------------------------------------
+  a) Python 3.12
+     https://www.python.org/downloads/
+     IMPORTANT: check "Add python.exe to PATH" during install.
+
+  b) Node.js 18+ (LTS is fine)
+     https://nodejs.org
+
+  c) Unzip the project, e.g. to:
+       C:\Users\<you>\Human Facial Emotion Detection
+     (project root = the folder containing README.md and requirements.txt)
+
+     If Windows Explorer complains about long paths:
+       Settings → System → For developers → enable "Long paths"
+       or extract with 7-Zip instead.
+
+
+--------------------------------------------------------------------------------
+2. PYTHON ENVIRONMENT (PowerShell — macOS .venv is not portable, rebuild it)
+--------------------------------------------------------------------------------
+  Open PowerShell:
+
+    cd "C:\Users\<you>\Human Facial Emotion Detection"
+    python -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    pip install -r requirements.txt
+
+  If running scripts is blocked, first run (current terminal only):
+    Set-ExecutionPolicy -Scope Process RemoteSigned
+
+  This installs PyTorch, OpenCV, FastAPI, uvicorn, pytest, etc.
+  (Takes a few minutes; CPU-only PyTorch is fine.)
+
+
+--------------------------------------------------------------------------------
+3. FRONTEND DEPS + BUILD (macOS node_modules/.next are not portable)
+--------------------------------------------------------------------------------
+    cd frontend
+    npm install
+    npm run build
+    cd ..
+
+
+--------------------------------------------------------------------------------
+4. START THE API  (Terminal 1 — port 8765 must match frontend/.env.local)
+--------------------------------------------------------------------------------
+    cd "C:\Users\<you>\Human Facial Emotion Detection"
+    .\.venv\Scripts\Activate.ps1
+    $env:AFFECTA_WARM_MODEL="1"
+    $env:AFFECTA_MODEL="dan"
+    uvicorn src.api.main:app --host 127.0.0.1 --port 8765
+
+  Wait for the DAN model warm-load (reads
+  data\raw\dan_weights\RAF-DB.pth, ~151 MB).
+
+  Verify in a browser or PowerShell:
+    Invoke-RestMethod http://127.0.0.1:8765/api/health
+  Expected: status "ok", model_loaded true.
+
+
+--------------------------------------------------------------------------------
+5. START THE WEB APP  (Terminal 2 — no venv needed)
+--------------------------------------------------------------------------------
+    cd "C:\Users\<you>\Human Facial Emotion Detection\frontend"
+    npm run start
+
+
+--------------------------------------------------------------------------------
+6. OPEN THE APP
+--------------------------------------------------------------------------------
+    http://127.0.0.1:3000
+
+  - First visit redirects to /login or /register.
+    - If data\affecta.db was in the zip: old accounts still work.
+    - For a FRESH start: delete data\affecta.db and data\.token_secret
+      (API will recreate them on next start), then register a new account.
+  - Live page will ask for CAMERA permission — allow it.
+  - frontend\.env.local already points at http://127.0.0.1:8765 — do not change
+    it unless you also change the API port.
+
+
+--------------------------------------------------------------------------------
+7. DAY-TO-DAY (after first setup)
+--------------------------------------------------------------------------------
+  Terminal 1 — API:
+    cd "C:\Users\<you>\Human Facial Emotion Detection"
+    .\.venv\Scripts\Activate.ps1
+    $env:AFFECTA_WARM_MODEL="1"; $env:AFFECTA_MODEL="dan"
+    uvicorn src.api.main:app --host 127.0.0.1 --port 8765
+
+  Terminal 2 — Web:
+    cd "C:\Users\<you>\Human Facial Emotion Detection\frontend"
+    npm run start
+
+  Stop: Ctrl+C in each terminal.
+
+  Optional — run the test suite (104 tests):
+    .\.venv\Scripts\Activate.ps1
+    pytest tests/ -v
+
+
+--------------------------------------------------------------------------------
+8. OPTIONAL: STANDALONE WEBCAM MODULE (no server / no browser needed)
+--------------------------------------------------------------------------------
+    .\.venv\Scripts\Activate.ps1
+    python -m src.pipeline.webcam
+
+  Keys: q/ESC quit · c toggle Grad-CAM · s snapshot
+  Other models: python -m src.pipeline.webcam --model ddamfn
+
+
+--------------------------------------------------------------------------------
+9. TROUBLESHOOTING
+--------------------------------------------------------------------------------
+  "python not found" / "node not found"
+      → Reinstall with "Add to PATH" (Python) or restart PowerShell after
+        installing Node.
+
+  "'Activate.ps1' cannot be loaded because running scripts is disabled"
+      → Set-ExecutionPolicy -Scope Process RemoteSigned
+        (or use .\.venv\Scripts\activate.bat in cmd.exe)
+
+  API starts but health says model_loaded false / inference errors
+      → Confirm data\raw\dan_weights\RAF-DB.pth exists (151,051,175 bytes).
+        Re-extract the zip if missing.
+
+  Frontend can't reach API / WebSocket fails
+      → API must be on 127.0.0.1:8765 (same as frontend\.env.local).
+        Check health: http://127.0.0.1:8765/api/health
+
+  Port already in use
+      → Another process holds 8765 or 3000:
+          netstat -ano | findstr :8765
+          netstat -ano | findstr :3000
+        Then: taskkill /PID <id> /F
+
+  npm run build fails after unzip
+      → Delete frontend\node_modules and frontend\.next, then:
+          cd frontend
+          npm install
+          npm run build
+
+  Camera not working on Live page
+      → Allow camera permission for http://127.0.0.1:3000.
+        Close other apps using the camera (Zoom, Teams, etc.).
+
+  Antivirus slows first run
+      → Normal on first npm install / model warm-load; wait it out or
+        whitelist the project folder.
+
+  On a GPU laptop (optional, faster inference):
+      pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+      (run inside the activated .venv, before/instead of step 2's torch)
+
+
+--------------------------------------------------------------------------------
+10. QUICK REFERENCE
+--------------------------------------------------------------------------------
+  Project root (this machine):  C:\Users\<you>\Human Facial Emotion Detection
+  API URL:                      http://127.0.0.1:8765
+  Health check:                 http://127.0.0.1:8765/api/health
+  Web URL:                      http://127.0.0.1:3000
+  API entry:                    src.api.main:app
+  Model weights:                data\raw\dan_weights\RAF-DB.pth
+  DB / secret:                  data\affecta.db , data\.token_secret
+  Env config:                   frontend\.env.local
+  Tests:                        pytest tests/ -v   (104 tests)
+  Report:                       Human_Facial_Emotion_Detection_Project_Report.docx
+  Ignore:                       Makefile (needs `make`, not native on Windows)
+
+  Headline model: DAN — 89.70% test acc / 82.75% balanced acc (RAF-DB, n=3068)
+  Champion ensemble (offline eval): ens_dan+ddamfn+vit — 89.99% / 82.90%
+
+================================================================================
+Private - Academic Use Only
+================================================================================

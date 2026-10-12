@@ -1,4 +1,4 @@
-# AFFECTA AI — Master Technical Specification
+# Human Facial Emotion Detection — Master Technical Specification
 
 ```
 Version: V1.0
@@ -14,7 +14,7 @@ Last Updated: 2026-09-10
 **A Ranking-Based Explainable AI Model for Human Facial Emotion Detection**
 
 ### Product Name
-**AFFECTA AI — Evidence-Ranked Facial Emotion Intelligence**
+**Human Facial Emotion Detection — Evidence-Ranked Facial Emotion Intelligence**
 
 ### Core Concept
 A real-time ranking-based explainable facial-expression analysis system with Action Unit evidence, region-level attribution, intensity estimation, uncertainty analysis and temporal multi-face tracking.

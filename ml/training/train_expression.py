@@ -25,9 +25,8 @@ from sklearn.metrics import (
 )
 
 from src.core.config import ModelConfig, EMOTIONS, NUM_EMOTIONS, PROJECT_ROOT
-from src.models.expression_classifier import get_expression_model
-from ml.data.dataset import create_dataloaders, get_sample_weights
-from ml.data.augmentation import build_train_transform, mixup_batch, cutmix_batch
+from ml.data.dataset import create_dataloaders
+from ml.data.augmentation import mixup_batch, cutmix_batch
 from ml.training.losses import build_criterion, mixup_criterion
 from ml.training.callbacks import ModelAveragingSWA, LRMonitor
 from ml.models.backbones import build_expression_model, input_size_for
@@ -487,7 +486,7 @@ def train_expression_model(
 
     # Class weights
     class_weights = compute_class_weights(train_loader, NUM_EMOTIONS)
-    print(f"\nClass Weights:")
+    print("\nClass Weights:")
     for i, emotion in enumerate(EMOTIONS):
         print(f"  {emotion:10s}: {class_weights[i]:.3f}")
 
@@ -714,10 +713,10 @@ def train_expression_model(
     print(f"Best Val Accuracy:  {best_val_acc:.2f}%")
     print(f"Test Accuracy:      {test_metrics['accuracy']:.2f}%")
     print(f"Test Macro-F1:      {test_metrics['macro_f1']:.2f}%")
-    print(f"\nPer-class Test F1:")
+    print("\nPer-class Test F1:")
     for emotion, f1 in test_metrics['per_class_f1'].items():
         print(f"  {emotion:10s}: {f1:.2f}%")
-    print(f"\nConfusion Matrix (Test):")
+    print("\nConfusion Matrix (Test):")
     cm = np.array(test_metrics['confusion_matrix'])
     print(f"{'':10s}", end="")
     for e in EMOTIONS:

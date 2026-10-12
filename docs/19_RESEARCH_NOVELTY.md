@@ -32,7 +32,7 @@ Traditional FER:
 Image → Classifier → "Happy 91%"
 ```
 
-AFFECTA:
+Human Facial Emotion Detection:
 ```
 Image → Classifier → "Happy 91%"
        → AU evidence → AU6 strong, AU12 strong
@@ -71,7 +71,7 @@ Detects when evidence is insufficient for reliable classification.
 
 ## 3. Comparison to Existing Work
 
-| Aspect | Traditional FER | AFFECTA |
+| Aspect | Traditional FER | Human Facial Emotion Detection |
 |--------|-----------------|---------|
 | Output | Single emotion label | Ranked emotions + evidence |
 | Explainability | None or heatmap | LRP + regions + AUs |
@@ -166,7 +166,7 @@ Most FER systems provide:
 - No evidence ranking
 - No uncertainty
 
-AFFECTA provides:
+Human Facial Emotion Detection provides:
 - Ranked predictions
 - LRP-based explanation
 - Multi-level evidence ranking

@@ -1,4 +1,4 @@
-"""Prepare RAF-DB basic (7-class) into the AFFECTA processed layout.
+"""Prepare RAF-DB basic (7-class) into the Human Facial Emotion Detection processed layout.
 
 Two source layouts are supported:
 

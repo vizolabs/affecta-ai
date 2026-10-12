@@ -110,10 +110,18 @@ CREATE TABLE settings (
     narrator_speed FLOAT DEFAULT 1.0,
     narrator_voice VARCHAR(50) DEFAULT 'default',
     xai_frame_interval INTEGER DEFAULT 10,
+    analysis_fps INTEGER DEFAULT 8,        -- live-mode capture rate (1..15)
+    emotion_hold_seconds FLOAT DEFAULT 0.0, -- display dwell (0..600, 0 = off)
+    analysis_mode VARCHAR(20) DEFAULT 'live',      -- 'live' | 'periodic'
+    analysis_interval_seconds INTEGER DEFAULT 120, -- periodic verdict window (30..600)
+    motion_trigger_enabled BOOLEAN DEFAULT TRUE,   -- periodic: early re-check
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
+
+Columns added after the first release are migrated in place by the idempotent
+`_ensure_columns()` guard in `src/api/core/database.py` (SQLite `ALTER TABLE`).
 
 ### model_registry
 

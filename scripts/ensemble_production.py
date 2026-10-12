@@ -17,23 +17,21 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import sys
 import time
 from pathlib import Path
 
 import numpy as np
 import torch
-import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import datasets
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.core.config import EMOTIONS, PROJECT_ROOT
-from ml.models.production import load_production, build_transform, INPUT_SIZES
-from ml.data.augmentation import ten_crop_flip_views
-from ml.benchmarks.calibration import compute_ece, fit_temperature
+from src.core.config import EMOTIONS, PROJECT_ROOT  # noqa: E402
+from ml.models.production import load_production, build_transform  # noqa: E402
+from ml.data.augmentation import ten_crop_flip_views  # noqa: E402
+from ml.benchmarks.calibration import compute_ece, fit_temperature  # noqa: E402
 
 DATA = PROJECT_ROOT / 'data/processed/rafdb'
 OUT_DIR = PROJECT_ROOT / 'experiments/EXP-010-ENSEMBLE'
@@ -183,7 +181,7 @@ def main() -> int:
     cal = {'target': best['name'], 'raw_ece': best['ece']}
     key = best['name']
     if key in test_logits and key in val_logits:
-        T = fit_temperature(val_logits[key], _val_targets(val_root_for(key), val_logits[key]))
+        T = fit_temperature(val_logits[key], _val_targets(_val_root_for(key), val_logits[key]))
         cal['temperature'] = round(T, 4)
         cal['cal_ece'] = round(compute_ece(test_logits[key] / T, targets)['ece'], 4)
     elif key.startswith('ens'):
@@ -201,9 +199,7 @@ def main() -> int:
             vtargets = _val_targets(DATA / ('val_rf' if 'ddamfn' in members else 'val'),
                                     vlg) if False else _load_targets(DATA / 'val')
             T = fit_temperature(vlg, vtargets)
-            probs_test = _softmax(np.array([r for r in [None]]) * 0) if False else None
             # apply T to ensemble test probs
-            best_row_probs = None
             cal['temperature'] = round(T, 4)
             # recompute ensemble test probs for ECE
             if key == 'ens_tta_dan+ddamfn':

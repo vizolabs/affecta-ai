@@ -1,7 +1,6 @@
 """Temporal smoothing and transition detection."""
 
 from typing import List, Dict, Optional
-from collections import deque
 
 
 class TemporalEngine:

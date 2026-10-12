@@ -11,7 +11,6 @@ from ml.models.production import (
     DDAMFN_NATIVE,
     DAN_NATIVE,
     DEFAULT_CKPTS,
-    INPUT_SIZES,
 )
 from ml.models.ddam import DDAMNet
 from ml.models.dan import DAN
@@ -121,7 +120,6 @@ class TestWebcamModule:
         assert not det.cascade.empty()
 
     def test_face_detector_on_synthetic(self):
-        import cv2
         from src.pipeline.webcam import FaceDetector
         # 200x200 gray noise frame: cascade returns [] or boxes, must not crash
         frame = np.random.randint(0, 255, (200, 200, 3), dtype=np.uint8)

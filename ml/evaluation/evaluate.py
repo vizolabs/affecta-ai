@@ -3,8 +3,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from typing import Dict, List, Tuple
-from pathlib import Path
+from typing import Dict
 
 from src.core.config import EMOTIONS, ACTION_UNITS
 
