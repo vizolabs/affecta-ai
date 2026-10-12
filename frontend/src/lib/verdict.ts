@@ -1,13 +1,17 @@
 "use client";
 
 /**
- * Verdict window — Periodic ("check-in") mode aggregation.
+ * Verdict window — Periodic / Pulse mode aggregation.
  *
- * Frames stream continuously at the configured analysis rate. Every interval
- * (or an early flush: motion, re-acquire) the samples collected since the last
- * flush are mean-pooled into one pinned verdict: the dominant emotion, its
- * pooled confidence, the mean face box, and the mean region evidence. A pooled
- * top-1 below the uncertain floor pins "uncertain" instead of a bare label.
+ * Frames stream continuously at the configured analysis rate. Every window
+ * (or an early flush: motion, re-acquire) the samples collected since the
+ * last flush are mean-pooled into one pinned verdict: the dominant emotion,
+ * its pooled confidence, the mean face box, and the mean region evidence.
+ *
+ * The displayed label is always the maximum-probability emotion — never
+ * "uncertain". When a runner-up is nearly tied (see primaryWithDual in
+ * emotions.ts) the UI shows both as "JOY / SURPRISE". The `uncertain`
+ * flag is retained only as low-confidence metadata for styling.
  */
 
 export const VERDICT_UNCERTAIN_BELOW = 0.4;
@@ -28,7 +32,7 @@ export interface VerdictSample {
 }
 
 export interface Verdict {
-  /** Dominant emotion key, or "uncertain". */
+  /** Dominant emotion key — always the maximum-probability emotion. */
   label: string;
   /** Weighted probability of `label` (0..1). */
   confidence: number;
@@ -132,7 +136,9 @@ export class VerdictBuffer {
 
     const uncertain = topP < VERDICT_UNCERTAIN_BELOW;
     const verdict: Verdict = {
-      label: uncertain ? "uncertain" : top,
+      // Always the maximum emotion — low confidence is carried by the
+      // `uncertain` flag and the displayed percentage, never by relabelling.
+      label: top,
       confidence: topP,
       uncertain,
       runnerUp,

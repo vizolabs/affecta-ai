@@ -12,9 +12,11 @@ import EmotionTimeline from "../../../components/timeline/EmotionTimeline";
 import { WS_URL, apiFetch } from "../../../lib/api";
 import {
   EMOTION_LABEL,
+  dualLabel,
   emotionColor,
   personLabel,
   pct,
+  primaryWithDual,
 } from "../../../lib/emotions";
 import type {
   FaceAnalysis,
@@ -231,12 +233,12 @@ export default function LivePage() {
         verdictBoxRef.current = [bx, by, bw, bh];
         const x = mirrorRef.current ? CAPTURE_W - bx - bw : bx;
 
-        const color = v.uncertain ? "#d4d4d8" : emotionColor(v.label);
+        const color = emotionColor(v.label);
         ctx.save();
         ctx.globalAlpha = stale ? 0.4 : 1;
 
-        // Soft glow on the dominant evidence region (skipped when uncertain).
-        if (!v.uncertain) {
+        // Soft glow on the dominant evidence region.
+        {
           const region = dominantRegion(v.regions);
           const frac = region ? REGION_FRAC[region] : null;
           const pctRegion = region && v.regions ? (v.regions[region] ?? 0) : 0;
@@ -290,14 +292,20 @@ export default function LivePage() {
         ctx.lineTo(rx0, ry1 - r);
         ctx.stroke();
 
-        // Trait chip: label + confidence, runner-up when the window was mixed.
-        const label = v.uncertain
-          ? "UNCERTAIN"
-          : (EMOTION_LABEL[v.label] ?? v.label).toUpperCase();
-        const runner = v.runnerUp
-          ? ` · ${(EMOTION_LABEL[v.runnerUp.label] ?? v.runnerUp.label).toUpperCase()} ${pct(v.runnerUp.confidence)}`
-          : "";
-        const chip = `VERDICT · ${label} ${pct(v.confidence)}${runner}${
+        // Trait chip: always the maximum emotion; show both majors when the
+        // window is a near-tie (e.g. "JOY / SURPRISE 45% / 42%").
+        const { primary, dual } = primaryWithDual(v.probabilities, {
+          label: v.label,
+          confidence: v.confidence,
+        });
+        const label = primary ? dualLabel(primary, dual) : v.label.toUpperCase();
+        const pPct = primary ? pct(primary.confidence) : pct(v.confidence);
+        const runner = dual
+          ? ` / ${pct(dual.confidence)}`
+          : v.runnerUp && v.runnerUp.label !== v.label
+            ? ` · ${(EMOTION_LABEL[v.runnerUp.label] ?? v.runnerUp.label).toUpperCase()} ${pct(v.runnerUp.confidence)}`
+            : "";
+        const chip = `VERDICT · ${label} ${pPct}${runner}${
           stale ? " · STALE" : ""
         } · n=${v.sampleCount}`;
         ctx.font = "bold 12px sans-serif";
@@ -307,7 +315,7 @@ export default function LivePage() {
         ctx.fillRect(x, ly, tw, 20);
         ctx.fillStyle = color;
         ctx.fillRect(x, ly, 3, 20);
-        ctx.fillStyle = v.uncertain ? "rgba(255,255,255,0.88)" : color;
+        ctx.fillStyle = color;
         ctx.fillText(chip, x + 9, ly + 14);
         ctx.restore();
         return;
@@ -325,9 +333,21 @@ export default function LivePage() {
         ctx.lineWidth = 2;
         ctx.strokeStyle = color;
         ctx.strokeRect(x, by, w, h);
-        const label = `${personLabel(shown.face_id)} ${(
-          EMOTION_LABEL[shown.emotion] ?? shown.emotion
-        ).toUpperCase()} ${pct(shown.confidence)}`;
+        const label = (() => {
+          const { primary, dual } = primaryWithDual(shown.probabilities, {
+            label: shown.emotion,
+            confidence: shown.confidence,
+          });
+          if (!primary) {
+            return `${personLabel(shown.face_id)} ${(
+              EMOTION_LABEL[shown.emotion] ?? shown.emotion
+            ).toUpperCase()} ${pct(shown.confidence)}`;
+          }
+          const head = dualLabel(primary, dual);
+          return dual
+            ? `${personLabel(shown.face_id)} ${head} ${pct(primary.confidence)} / ${pct(dual.confidence)}`
+            : `${personLabel(shown.face_id)} ${head} ${pct(primary.confidence)}`;
+        })();
         ctx.font = "bold 13px sans-serif";
         const tw = ctx.measureText(label).width + 10;
         const ly = by > 20 ? by - 22 : by + h + 4;
@@ -354,10 +374,10 @@ export default function LivePage() {
   );
 
   /* ---------- emotion dwell (display hold) ---------- */
-  // Dwell is a Live-mode display trick; in periodic mode the verdict window
-  // itself is the hold, so it is disabled there.
+  // Dwell is a Live-mode display trick; in periodic/pulse modes the verdict
+  // window itself is the hold, so it is disabled there.
   const holdMs =
-    settings?.analysis_mode === "periodic" ? 0 : holdSeconds * 1000;
+    settings?.analysis_mode === "live" ? holdSeconds * 1000 : 0;
   const heldFace = useEmotionHold(faces, holdMs);
 
   useEffect(() => {
@@ -437,18 +457,30 @@ export default function LivePage() {
       setPulseHoldLeft(Math.round(pulseHoldMsRef.current / 1000));
     }
     const s = settingsRef.current;
-    const name = v.uncertain
-      ? "Uncertain"
-      : (EMOTION_LABEL[v.label] ?? v.label);
+    // Always the maximum emotion; dual majors read as "Joy / Surprise".
+    const { primary, dual } = primaryWithDual(v.probabilities, {
+      label: v.label,
+      confidence: v.confidence,
+    });
+    const name = primary
+      ? dual
+        ? `${EMOTION_LABEL[primary.label] ?? primary.label} / ${
+            EMOTION_LABEL[dual.label] ?? dual.label
+          }`
+        : (EMOTION_LABEL[primary.label] ?? primary.label)
+      : v.label;
+    const spokenConf = dual
+      ? `${pct(primary!.confidence)} and ${pct(dual.confidence)}`
+      : pct(v.confidence);
     setNarration(
       (prev) =>
         [
           {
             face_id: 0,
             event_type: "verdict",
-            text: `Verdict — ${
-              v.uncertain ? "UNCERTAIN" : name.toUpperCase()
-            } ${pct(v.confidence)} · window n=${v.sampleCount}`,
+            text: `Verdict — ${name.toUpperCase()} ${pct(v.confidence)}${
+              dual ? ` / ${pct(dual.confidence)}` : ""
+            } · window n=${v.sampleCount}`,
             timestamp: Date.now() / 1000,
           },
           ...prev,
@@ -456,7 +488,7 @@ export default function LivePage() {
     );
     if (voiceOnRef.current) {
       speak(
-        `Verdict: ${name}, ${pct(v.confidence)}`,
+        `Verdict: ${name}, ${spokenConf}`,
         s?.narrator_speed ?? 1,
         s?.narrator_voice ?? "default",
       );

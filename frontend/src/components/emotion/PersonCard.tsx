@@ -4,9 +4,11 @@ import type { FaceAnalysis } from "../../lib/types";
 import {
   EMOTION_EMOJI,
   EMOTION_LABEL,
+  dualLabel,
   emotionColor,
-  personLabel,
   pct,
+  personLabel,
+  primaryWithDual,
 } from "../../lib/emotions";
 
 interface Props {
@@ -37,6 +39,16 @@ export default function PersonCard({
   const color = emotionColor(face.emotion);
   const certaintyClass =
     CERTAINTY_STYLE[face.certainty] ?? CERTAINTY_STYLE.uncertain;
+  // Always the maximum emotion; when a runner-up is nearly tied, show both
+  // majors (e.g. "Happy / Surprise 45% / 42%").
+  const { primary, dual } = primaryWithDual(face.probabilities, {
+    label: face.emotion,
+    confidence: face.confidence,
+  });
+  const mainLabel = primary
+    ? (EMOTION_LABEL[primary.label] ?? primary.label)
+    : (EMOTION_LABEL[face.emotion] ?? face.emotion);
+  const mainConf = primary ? primary.confidence : face.confidence;
 
   return (
     <div
@@ -82,14 +94,21 @@ export default function PersonCard({
           className="text-lg font-bold uppercase"
           style={{ color }}
         >
-          {EMOTION_LABEL[face.emotion] ?? face.emotion}
+          {dual
+            ? dualLabel({ label: primary!.label, confidence: mainConf }, dual)
+            : mainLabel}
         </span>
       </div>
+      {dual && (
+        <p className="mt-0.5 font-mono text-[11px] text-muted">
+          {pct(mainConf)} / {pct(dual.confidence)}
+        </p>
+      )}
 
       <dl className="mt-2 space-y-1 text-xs">
         <div className="flex justify-between">
           <dt className="text-muted">Confidence</dt>
-          <dd className="font-medium">{pct(face.confidence)}</dd>
+          <dd className="font-medium">{pct(mainConf)}</dd>
         </div>
         <div className="flex justify-between">
           <dt className="text-muted">Intensity</dt>
