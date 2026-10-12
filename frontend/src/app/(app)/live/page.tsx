@@ -130,6 +130,8 @@ export default function LivePage() {
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [verdictSamples, setVerdictSamples] = useState(0);
   const [verdictStale, setVerdictStale] = useState(false);
+  /** Pulse mode: seconds left on the current pinned-hold display (0 = not holding). */
+  const [pulseHoldLeft, setPulseHoldLeft] = useState(0);
 
   const voiceOnRef = useRef(voiceOn);
   const verdictBufRef = useRef(new VerdictBuffer());
@@ -137,6 +139,8 @@ export default function LivePage() {
   const lastFaceAtRef = useRef<number | null>(null);
   const instantFlushRef = useRef(false);
   const isPeriodicRef = useRef(false);
+  const isPulseRef = useRef(false);
+  const pulseHoldMsRef = useRef(30_000);
   const demoModeRef = useRef(false);
 
   useEffect(() => {
@@ -401,9 +405,14 @@ export default function LivePage() {
 
   const analysisMode = settings?.analysis_mode ?? "live";
   const isPeriodic = analysisMode === "periodic";
+  const isPulse = analysisMode === "pulse";
   const intervalMs = (settings?.analysis_interval_seconds ?? 120) * 1000;
+  const pulseScanMs = Math.min(120, Math.max(5, settings?.pulse_scan_seconds ?? 30)) * 1000;
+  const pulseHoldMs = Math.min(120, Math.max(5, settings?.pulse_hold_seconds ?? 30)) * 1000;
   const motionEnabled = settings?.motion_trigger_enabled ?? true;
   isPeriodicRef.current = isPeriodic;
+  isPulseRef.current = isPulse;
+  pulseHoldMsRef.current = pulseHoldMs;
 
   /* ---------- local preview loop (independent of analysis cadence) ---------- */
   const startPreviewLoop = useCallback(() => {
@@ -418,10 +427,15 @@ export default function LivePage() {
     }
   }, []);
 
-  /* ---------- verdict (periodic mode) ---------- */
+  /* ---------- verdict (periodic + pulse modes) ---------- */
   const applyVerdict = useCallback((v: Verdict) => {
     setVerdict(v);
     setVerdictSamples(verdictBufRef.current.size);
+    // Pulse mode: pin the verdict for the configured hold window; the
+    // countdown ticks down in a dedicated interval (see pulse hold effect).
+    if (isPulse) {
+      setPulseHoldLeft(Math.round(pulseHoldMsRef.current / 1000));
+    }
     const s = settingsRef.current;
     const name = v.uncertain
       ? "Uncertain"
@@ -447,7 +461,7 @@ export default function LivePage() {
         s?.narrator_voice ?? "default",
       );
     }
-  }, []);
+  }, [isPulse]);
 
   const flushVerdict = useCallback(() => {
     const v = verdictBufRef.current.flush(Date.now());
@@ -462,13 +476,13 @@ export default function LivePage() {
   const [nextCheckSec, setNextCheckSec] = useState<number | null>(null);
 
   const tickCadence = useCallback(() => {
-    // In periodic mode the honest countdown is to the next verdict flush.
-    const handle = isPeriodicRef.current
+    // In periodic/pulse modes the honest countdown is to the next verdict flush.
+    const handle = isPeriodicRef.current || isPulseRef.current
       ? verdictCadenceRef.current
       : cadenceRef.current;
     setNextCheckSec(handle ? handle.secondsUntil(Date.now()) : null);
     const last = lastAnalysisAtRef.current;
-    if (isPeriodicRef.current) {
+    if (isPeriodicRef.current || isPulseRef.current) {
       const stale = last !== null && Date.now() - last > VERDICT_STALE_MS;
       setVerdictStale((prev) => (prev === stale ? prev : stale));
     }
@@ -477,8 +491,8 @@ export default function LivePage() {
   const startSendTimer = useCallback(() => {
     cadenceRef.current?.stop();
     verdictCadenceRef.current?.stop();
-    // Capture streams continuously in both modes; periodic mode pools the
-    // stream into a verdict on its own interval cadence.
+    // Capture streams continuously in all modes; periodic/pulse pool the
+    // stream into a verdict on their own interval cadence.
     cadenceRef.current = startCadence(
       { mode: "live", fps: analysisFps, intervalMs },
       () => {
@@ -495,13 +509,25 @@ export default function LivePage() {
           tickCadence();
         },
       );
+    } else if (isPulse) {
+      // Pulse: flush a pooled verdict every scan window. The hold countdown
+      // is driven separately by the pulse-hold ticker below.
+      verdictCadenceRef.current = startCadence(
+        { mode: "periodic", fps: analysisFps, intervalMs: pulseScanMs },
+        () => {
+          flushVerdict();
+          tickCadence();
+        },
+      );
     }
     tickCadence();
   }, [
     captureAndSend,
     analysisFps,
     isPeriodic,
+    isPulse,
     intervalMs,
+    pulseScanMs,
     tickCadence,
     flushVerdict,
   ]);
@@ -519,7 +545,19 @@ export default function LivePage() {
     if (running && wsRef.current?.readyState === WebSocket.OPEN) {
       startSendTimer();
     }
-  }, [analysisFps, isPeriodic, intervalMs, motionEnabled, running, startSendTimer]);
+  }, [analysisFps, isPeriodic, isPulse, intervalMs, pulseScanMs, motionEnabled, running, startSendTimer]);
+
+  // Pulse hold countdown: ticks the pinned-verdict display down each second.
+  useEffect(() => {
+    if (!isPulse || !running) {
+      setPulseHoldLeft(0);
+      return;
+    }
+    const id = window.setInterval(() => {
+      setPulseHoldLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [isPulse, running]);
 
   useEffect(() => {
     if (!running) return;
@@ -560,7 +598,7 @@ export default function LivePage() {
 
     if (
       motionEnabled &&
-      isPeriodic &&
+      (isPeriodic || isPulse) &&
       !pausedRef.current &&
       wsRef.current?.readyState === WebSocket.OPEN &&
       shouldTriggerMotion(
@@ -580,7 +618,7 @@ export default function LivePage() {
       }
       tickCadence();
     }
-  }, [motionEnabled, isPeriodic, tickCadence, applyVerdict]);
+  }, [motionEnabled, isPeriodic, isPulse, tickCadence, applyVerdict]);
 
   const startMotionWatch = useCallback(() => {
     if (motionTimerRef.current !== null) return;
@@ -618,7 +656,7 @@ export default function LivePage() {
           setTimeline((prev) => [...prev, msg.timeline as TimelineSample].slice(-300));
         }
         if (msg.xai) setXai(msg.xai);
-        if (isPeriodicRef.current) {
+        if (isPeriodicRef.current || isPulseRef.current) {
           const face = (msg.faces ?? [])[0];
           const now = Date.now();
           const buf = verdictBufRef.current;
@@ -652,8 +690,8 @@ export default function LivePage() {
         }
         if (msg.narration && msg.narration.length > 0) {
           setNarration((prev) => [...msg.narration, ...prev].slice(0, 80));
-          // Periodic mode narrates per verdict, not per frame.
-          if (voiceOnRef.current && !isPeriodicRef.current) {
+          // Periodic/pulse modes narrate per verdict, not per frame.
+          if (voiceOnRef.current && !isPeriodicRef.current && !isPulseRef.current) {
             const s = settingsRef.current;
             for (const line of msg.narration) {
               speak(
@@ -685,15 +723,22 @@ export default function LivePage() {
     const title = sessionTitleRef.current.trim();
     if (title) params.set("title", title.slice(0, 120));
     params.set("fps", String(analysisFps));
-    params.set("mode", isPeriodic ? "periodic" : "live");
+    params.set(
+      "mode",
+      isPulse ? "pulse" : isPeriodic ? "periodic" : "live",
+    );
     params.set("interval", String(Math.round(intervalMs / 1000)));
+    if (isPulse) {
+      params.set("scan", String(Math.round(pulseScanMs / 1000)));
+      params.set("hold", String(Math.round(pulseHoldMs / 1000)));
+    }
     params.set("motion", motionEnabled ? "1" : "0");
     if (xaiModeRef.current === "transition") {
       params.set("xai_interval", String(NO_INTERVAL));
     }
     const qs = params.toString();
     return `${WS_URL}/ws/emotion-stream${qs ? `?${qs}` : ""}`;
-  }, [analysisFps, isPeriodic, intervalMs, motionEnabled]);
+  }, [analysisFps, isPeriodic, isPulse, intervalMs, pulseScanMs, pulseHoldMs, motionEnabled]);
 
   const openWsRef = useRef<() => void>(() => {});
   const teardownRef = useRef<() => void>(() => {});
@@ -797,6 +842,7 @@ export default function LivePage() {
     setVerdict(null);
     setVerdictSamples(0);
     setVerdictStale(false);
+    setPulseHoldLeft(0);
     setRunning(false);
     setPaused(false);
     setFaces([]);
@@ -824,6 +870,7 @@ export default function LivePage() {
     setVerdict(null);
     setVerdictSamples(0);
     setVerdictStale(false);
+    setPulseHoldLeft(0);
     retryRef.current = 0;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -836,7 +883,7 @@ export default function LivePage() {
       video.srcObject = stream;
       await video.play();
       startPreviewLoop();
-      if (isPeriodic && motionEnabled) startMotionWatch();
+      if ((isPeriodic || isPulse) && motionEnabled) startMotionWatch();
       openWs();
       setRunning(true);
     } catch (err) {
@@ -847,7 +894,7 @@ export default function LivePage() {
       setError(message);
       teardown();
     }
-  }, [token, openWs, teardown, startPreviewLoop, startMotionWatch, isPeriodic, motionEnabled]);
+  }, [token, openWs, teardown, startPreviewLoop, startMotionWatch, isPeriodic, isPulse, motionEnabled]);
 
   const stop = useCallback(() => {
     teardown();
@@ -1002,9 +1049,11 @@ export default function LivePage() {
     wsStatus === "open"
       ? paused
         ? "Paused"
-        : isPeriodic
-          ? "Verdict"
-          : "Live"
+        : isPulse
+          ? "Pulse"
+          : isPeriodic
+            ? "Verdict"
+            : "Live"
       : wsStatus === "connecting"
         ? "Connecting…"
         : wsStatus === "reconnecting"
@@ -1047,9 +1096,11 @@ export default function LivePage() {
                 {statusLabel}
               </span>
               {running &&
-                (isPeriodic
-                  ? `verdict mode · next ${nextCheckSec !== null ? formatDuration(nextCheckSec) : "—"} · window ${verdictSamples} frames${verdictStale ? " · face lost (verdict held)" : " · tracking"} · frame ${frameId ?? 0} · ${eventCount} events${motionEnabled ? ` · motion ${(motionLevel * 100).toFixed(1)}%` : ""}`
-                  : `${fps ?? "—"} fps · set ${analysisFps} fps · frame ${frameId ?? 0} · ${eventCount} events`)}
+                (isPulse
+                  ? `pulse mode · ${pulseHoldLeft > 0 ? `hold ${pulseHoldLeft}s` : `scan next ${nextCheckSec !== null ? formatDuration(nextCheckSec) : "—"} · accumulating ${verdictSamples} frames`} · scan ${Math.round(pulseScanMs / 1000)}s · hold ${Math.round(pulseHoldMs / 1000)}s · frame ${frameId ?? 0} · ${eventCount} events`
+                  : isPeriodic
+                    ? `verdict mode · next ${nextCheckSec !== null ? formatDuration(nextCheckSec) : "—"} · window ${verdictSamples} frames${verdictStale ? " · face lost (verdict held)" : " · tracking"} · frame ${frameId ?? 0} · ${eventCount} events${motionEnabled ? ` · motion ${(motionLevel * 100).toFixed(1)}%` : ""}`
+                    : `${fps ?? "—"} fps · set ${analysisFps} fps · frame ${frameId ?? 0} · ${eventCount} events`)}
               {!running && "idle"}
             </span>
           }
@@ -1077,6 +1128,20 @@ export default function LivePage() {
             {paused && running && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm font-medium">
                 Paused — press Space or Resume
+              </div>
+            )}
+            {isPulse && running && !paused && (
+              <div
+                aria-live="polite"
+                className={`absolute left-2 top-2 rounded-md border px-2 py-1 font-mono text-[11px] ${
+                  pulseHoldLeft > 0
+                    ? "border-accent/60 bg-accent/15 text-accent"
+                    : "border-border bg-background/80 text-muted"
+                }`}
+              >
+                {pulseHoldLeft > 0
+                  ? `HOLD ${pulseHoldLeft}s`
+                  : `SCAN · next ${nextCheckSec !== null ? formatDuration(nextCheckSec) : "—"}`}
               </div>
             )}
           </div>
@@ -1195,7 +1260,15 @@ export default function LivePage() {
                   key={face.face_id}
                   face={face}
                   selected={face.face_id === (selected?.face_id ?? -1)}
-                  badge={isPeriodic ? "live frame" : undefined}
+                  badge={
+                    isPeriodic
+                      ? "live frame"
+                      : isPulse
+                        ? pulseHoldLeft > 0
+                          ? "held verdict"
+                          : "scanning"
+                        : undefined
+                  }
                   onSelect={() => setSelectedId(face.face_id)}
                   onWhy={() => sendControl(face.face_id)}
                   onHeatmap={() => {

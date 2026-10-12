@@ -198,9 +198,13 @@ export interface UserSettings {
   analysis_fps: number;
   /** Display dwell: seconds a detected emotion stays on screen (0 = off). */
   emotion_hold_seconds: number;
-  /** "live" = continuous capture; "periodic" = one analysis every N seconds. */
-  analysis_mode: "live" | "periodic";
+  /** "live" = continuous; "periodic" = verdict every N s; "pulse" = scan then hold. */
+  analysis_mode: "live" | "periodic" | "pulse";
   analysis_interval_seconds: number;
+  /** Pulse mode: seconds of frame accumulation per window (5-120). */
+  pulse_scan_seconds: number;
+  /** Pulse mode: seconds each pooled verdict stays pinned (5-120). */
+  pulse_hold_seconds: number;
   /** Periodic mode: significant movement forces an early re-analysis. */
   motion_trigger_enabled: boolean;
 }

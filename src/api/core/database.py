@@ -97,6 +97,20 @@ def _ensure_columns() -> None:
                     "BOOLEAN DEFAULT 1"
                 )
             )
+        if "pulse_scan_seconds" not in cols:
+            conn.execute(
+                text(
+                    "ALTER TABLE settings ADD COLUMN pulse_scan_seconds "
+                    "INTEGER DEFAULT 30"
+                )
+            )
+        if "pulse_hold_seconds" not in cols:
+            conn.execute(
+                text(
+                    "ALTER TABLE settings ADD COLUMN pulse_hold_seconds "
+                    "INTEGER DEFAULT 30"
+                )
+            )
 
 
 # Registry seeds — metrics sourced from experiments/EXP-010-ENSEMBLE

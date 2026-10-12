@@ -51,6 +51,8 @@ def _load_user_prefs(user_id: str) -> dict:
                 "emotion_hold_seconds": 0.0,
                 "analysis_mode": "live",
                 "analysis_interval_seconds": 120,
+                "pulse_scan_seconds": 30,
+                "pulse_hold_seconds": 30,
                 "motion_trigger_enabled": True,
             }
         return {
@@ -62,6 +64,8 @@ def _load_user_prefs(user_id: str) -> dict:
             "emotion_hold_seconds": getattr(row, "emotion_hold_seconds", 0.0),
             "analysis_mode": getattr(row, "analysis_mode", "live"),
             "analysis_interval_seconds": getattr(row, "analysis_interval_seconds", 120),
+            "pulse_scan_seconds": getattr(row, "pulse_scan_seconds", 30),
+            "pulse_hold_seconds": getattr(row, "pulse_hold_seconds", 30),
             "motion_trigger_enabled": getattr(row, "motion_trigger_enabled", True),
         }
     finally:
@@ -187,13 +191,25 @@ async def emotion_stream(websocket: WebSocket):
     applied_fps = max(1, min(15, applied_fps))
 
     mode = (qp.get("mode") or prefs["analysis_mode"] or "live").strip().lower()
-    if mode not in ("live", "periodic"):
+    if mode not in ("live", "periodic", "pulse"):
         mode = "live"
     try:
         interval = int(qp["interval"]) if qp.get("interval") else prefs["analysis_interval_seconds"]
     except (TypeError, ValueError):
         interval = prefs["analysis_interval_seconds"]
     interval = max(30, min(600, interval))
+    # Pulse mode: scan window (frame accumulation) + hold (pinned verdict
+    # display time). Defaults come from user settings.
+    try:
+        pulse_scan = int(qp["scan"]) if qp.get("scan") else prefs["pulse_scan_seconds"]
+    except (TypeError, ValueError):
+        pulse_scan = prefs["pulse_scan_seconds"]
+    pulse_scan = max(5, min(120, pulse_scan))
+    try:
+        pulse_hold = int(qp["hold"]) if qp.get("hold") else prefs["pulse_hold_seconds"]
+    except (TypeError, ValueError):
+        pulse_hold = prefs["pulse_hold_seconds"]
+    pulse_hold = max(5, min(120, pulse_hold))
     motion = qp.get("motion", "1") not in ("0", "false", "no")
 
     service = websocket.app.state.service
@@ -214,6 +230,8 @@ async def emotion_stream(websocket: WebSocket):
             "applied_fps": applied_fps,
             "analysis_mode": mode,
             "applied_interval_seconds": interval if mode == "periodic" else None,
+            "applied_pulse_scan_seconds": pulse_scan if mode == "pulse" else None,
+            "applied_pulse_hold_seconds": pulse_hold if mode == "pulse" else None,
             "motion_trigger": motion if mode == "periodic" else False,
             "emotion_hold_seconds": prefs["emotion_hold_seconds"],
         },

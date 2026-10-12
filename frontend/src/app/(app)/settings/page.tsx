@@ -273,7 +273,7 @@ export default function SettingsPage() {
             <span className="uppercase text-accent">
               {settings.analysis_mode}
             </span>
-            <InfoTip text="Live = continuous per-frame analysis. Periodic = a pinned verdict every N minutes, mean-pooled from a continuous stream of readings — built for unattended displays." />
+            <InfoTip text="Live = continuous per-frame analysis. Periodic = a pinned verdict every N minutes. Pulse = scan for N seconds, pin the pooled verdict for a hold window while the next scan accumulates (see below)." />
           </span>
           <select
             value={settings.analysis_mode}
@@ -284,6 +284,7 @@ export default function SettingsPage() {
           >
             <option value="live">Live (continuous)</option>
             <option value="periodic">Periodic (verdict)</option>
+            <option value="pulse">Pulse (scan &amp; hold)</option>
           </select>
         </label>
 
@@ -307,6 +308,89 @@ export default function SettingsPage() {
                 className="w-40"
               />
             </label>
+          </>
+        ) : settings.analysis_mode === "pulse" ? (
+          <>
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>
+                  Scan window{" "}
+                  <span className="text-muted">
+                    ({formatDuration(settings.pulse_scan_seconds)})
+                  </span>
+                  <InfoTip text="Seconds of frames accumulated per analysis window. At the end of each window the readings are mean-pooled into a pinned verdict. Range: 5s – 2 min." />
+                </span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={120}
+                step={5}
+                value={settings.pulse_scan_seconds}
+                onChange={(e) =>
+                  update(
+                    "pulse_scan_seconds",
+                    Math.min(120, Math.max(5, Number(e.target.value))),
+                  )
+                }
+                className="mt-2 w-full"
+              />
+            </div>
+
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-sm">
+                <span>
+                  Hold window{" "}
+                  <span className="text-muted">
+                    ({formatDuration(settings.pulse_hold_seconds)})
+                  </span>
+                  <InfoTip text="Seconds each pinned verdict stays on screen. Frames keep streaming during the hold so the next window is ready when the hold ends. Range: 5s – 2 min." />
+                </span>
+              </div>
+              <input
+                type="range"
+                min={5}
+                max={120}
+                step={5}
+                value={settings.pulse_hold_seconds}
+                onChange={(e) =>
+                  update(
+                    "pulse_hold_seconds",
+                    Math.min(120, Math.max(5, Number(e.target.value))),
+                  )
+                }
+                className="mt-2 w-full"
+              />
+            </div>
+
+            <div className="mt-3 flex items-center gap-1.5">
+              <InfoTip text="Pulse presets: equal windows (30/30) give a steady scan→hold rhythm; a longer hold suits presentations; a longer scan suits steadier verdicts." />
+              <span className="flex flex-wrap gap-1.5">
+                {[
+                  [15, 15],
+                  [30, 30],
+                  [30, 60],
+                  [60, 30],
+                ].map(([scan, hold]) => (
+                  <button
+                    key={`${scan}-${hold}`}
+                    type="button"
+                    onClick={() => {
+                      update("pulse_scan_seconds", scan);
+                      update("pulse_hold_seconds", hold);
+                    }}
+                    className={`rounded-md border px-2 py-1 font-mono text-[11px] transition ${
+                      settings.pulse_scan_seconds === scan &&
+                      settings.pulse_hold_seconds === hold
+                        ? "border-accent bg-accent/15 text-accent"
+                        : "border-border text-muted hover:border-accent/60 hover:text-foreground"
+                    }`}
+                  >
+                    {scan}s / {hold}s
+                  </button>
+                ))}
+              </span>
+            </div>
           </>
         ) : (
           <>
@@ -395,7 +479,9 @@ export default function SettingsPage() {
         <p className="mt-2 text-xs text-muted">
           {settings.analysis_mode === "periodic"
             ? "Periodic mode: frames stream continuously; the face shows the pinned verdict for the current window (pooled from every reading in that window), and the Live bar counts down to the next one. The Person panel and timeline stay live per-frame."
-            : "Frame rate applies immediately to a running session; the hold takes effect on the next analysis frame. Held labels are marked with a countdown bar — narration and the Person panel always show live values."}
+            : settings.analysis_mode === "pulse"
+              ? "Pulse mode: frames stream continuously; the face shows the pooled verdict for the current scan window, pinned for the hold duration. While the verdict is held the next window keeps accumulating in the background, so a fresh verdict is ready the moment the hold ends."
+              : "Frame rate applies immediately to a running session; the hold takes effect on the next analysis frame. Held labels are marked with a countdown bar — narration and the Person panel always show live values."}
         </p>
       </Card>
 

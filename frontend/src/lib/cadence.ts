@@ -15,7 +15,7 @@
  * completion time, so long intervals do not accumulate drift.
  */
 
-export type AnalysisMode = "live" | "periodic";
+export type AnalysisMode = "live" | "periodic" | "pulse";
 
 export interface CadenceConfig {
   mode: AnalysisMode;

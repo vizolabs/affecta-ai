@@ -133,9 +133,14 @@ class SettingsRow(Base):
     # label may switch. 0 = off (label follows the live value immediately).
     emotion_hold_seconds: Mapped[float] = mapped_column(Float, default=0.0)
     # "live" = continuous capture at analysis_fps; "periodic" = one analysis
-    # every analysis_interval_seconds while the preview keeps rendering live.
+    # every analysis_interval_seconds; "pulse" = scan window then pinned
+    # hold while the next window accumulates (docs/13).
     analysis_mode: Mapped[str] = mapped_column(String(20), default="live")
     analysis_interval_seconds: Mapped[int] = mapped_column(Integer, default=120)
+    # Pulse mode: seconds of frame accumulation per window (5-120) and
+    # seconds each pooled verdict stays pinned on screen (5-120).
+    pulse_scan_seconds: Mapped[int] = mapped_column(Integer, default=30)
+    pulse_hold_seconds: Mapped[int] = mapped_column(Integer, default=30)
     # In periodic mode, significant movement forces an early re-analysis.
     motion_trigger_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)

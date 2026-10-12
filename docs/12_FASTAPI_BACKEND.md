@@ -150,8 +150,10 @@ metadata so exports state what actually produced a run:
 | Param | Meaning | Recorded as |
 |-------|---------|--------------|
 | `fps` | live-mode capture rate (clamped 1–15) | `applied_fps` |
-| `mode` | `live` or `periodic` (unknown → live) | `analysis_mode` |
-| `interval` | periodic verdict-window seconds (clamped 30–600) | `applied_interval_seconds` (`null` in live mode) |
+| `mode` | `live`, `periodic`, or `pulse` (unknown → live) | `analysis_mode` |
+| `interval` | periodic verdict-window seconds (clamped 30–600) | `applied_interval_seconds` (`null` in live/pulse mode) |
+| `scan` | pulse scan-window seconds (clamped 5–120) | `applied_pulse_scan_seconds` (`null` unless pulse) |
+| `hold` | pulse hold-display seconds (clamped 5–120) | `applied_pulse_hold_seconds` (`null` unless pulse) |
 | `motion` | `1`/`0` motion trigger | `motion_trigger` (`false` in live mode) |
 | `title` | session title | `title` |
 | `xai_interval` | Grad-CAM cadence override (clamped [1,120]) | — |

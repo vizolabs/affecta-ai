@@ -304,7 +304,7 @@ def test_settings_reject_out_of_range(client):
 
 def test_settings_cadence_bounds(client):
     headers, _, _ = auth_headers(client)
-    # only live/periodic are valid modes
+    # only live/periodic/pulse are valid modes
     assert (
         client.put(
             "/api/settings", headers=headers, json={"analysis_mode": "realtime"}
@@ -313,6 +313,10 @@ def test_settings_cadence_bounds(client):
     )
     assert (
         client.put("/api/settings", headers=headers, json={"analysis_mode": "periodic"}).status_code
+        == 200
+    )
+    assert (
+        client.put("/api/settings", headers=headers, json={"analysis_mode": "pulse"}).status_code
         == 200
     )
     # interval bounds: 30s .. 600s
@@ -340,6 +344,40 @@ def test_settings_cadence_bounds(client):
         ).status_code
         == 200
     )
+    # pulse scan/hold bounds: 5s .. 120s each
+    assert (
+        client.put(
+            "/api/settings", headers=headers, json={"pulse_scan_seconds": 4}
+        ).status_code
+        == 422
+    )
+    assert (
+        client.put(
+            "/api/settings", headers=headers, json={"pulse_scan_seconds": 121}
+        ).status_code
+        == 422
+    )
+    assert (
+        client.put(
+            "/api/settings", headers=headers, json={"pulse_hold_seconds": 4}
+        ).status_code
+        == 422
+    )
+    assert (
+        client.put(
+            "/api/settings", headers=headers, json={"pulse_hold_seconds": 121}
+        ).status_code
+        == 422
+    )
+    assert (
+        client.put(
+            "/api/settings", headers=headers, json={"pulse_scan_seconds": 30, "pulse_hold_seconds": 60}
+        ).status_code
+        == 200
+    )
+    r = client.get("/api/settings", headers=headers)
+    assert r.json()["data"]["pulse_scan_seconds"] == 30
+    assert r.json()["data"]["pulse_hold_seconds"] == 60
 
 
 # ---- tracker ----

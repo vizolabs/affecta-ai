@@ -140,6 +140,8 @@ class SettingsOut(BaseModel):
     emotion_hold_seconds: float = 0.0
     analysis_mode: str = "live"
     analysis_interval_seconds: int = 120
+    pulse_scan_seconds: int = 30
+    pulse_hold_seconds: int = 30
     motion_trigger_enabled: bool = True
 
     model_config = {"from_attributes": True}
@@ -160,9 +162,13 @@ class SettingsUpdate(BaseModel):
     analysis_fps: Optional[int] = Field(default=None, ge=1, le=15)
     # Display dwell in seconds (0 = off).
     emotion_hold_seconds: Optional[float] = Field(default=None, ge=0.0, le=600.0)
-    # "live" (continuous) or "periodic" (one analysis every N seconds).
-    analysis_mode: Optional[Literal["live", "periodic"]] = None
+    # "live" (continuous), "periodic" (one analysis every N seconds), or
+    # "pulse" (scan window then pinned hold while next window accumulates).
+    analysis_mode: Optional[Literal["live", "periodic", "pulse"]] = None
     analysis_interval_seconds: Optional[int] = Field(default=None, ge=30, le=600)
+    # Pulse mode: scan/hold window lengths in seconds.
+    pulse_scan_seconds: Optional[int] = Field(default=None, ge=5, le=120)
+    pulse_hold_seconds: Optional[int] = Field(default=None, ge=5, le=120)
     motion_trigger_enabled: Optional[bool] = None
 
 
