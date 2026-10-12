@@ -12,7 +12,7 @@ Version: V1.0
 | Dataset | Expression | AU | Video | Size | Use | Access |
 |---------|-----------|-----|-------|------|-----|--------|
 | AffectNet | ✅ | — | — | 1M+ | Pre-train/Fine-tune | Verify |
-| FER2013 | ✅ | — | — | 35K | Benchmark | Public |
+| FER2013 | ✅ | — | — | 35K | Benchmark — historical baseline only; shipped product is RAF-DB alone | Public |
 | RAF-DB | ✅ | — | — | 30K | Generalization | Public |
 | BP4D | — | ✅ | ✅ | 41 subj | AU training | Request |
 | DISFA | — | ✅ | ✅ | 135 subj | AU training | Request |
@@ -26,14 +26,14 @@ Version: V1.0
 ### 7-Class Scheme
 
 ```python
-EMOTIONS = ['happy', 'sad', 'angry', 'fear', 'surprise', 'disgust', 'neutral']
+EMOTIONS = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 ```
 
 ### Mapping Rules
 
 | Dataset | Labels | Mapping |
 |---------|--------|---------|
-| FER2013 | 7 classes | Direct mapping |
+| FER2013 | 7 classes | Direct mapping — historical baseline only; shipped product is RAF-DB alone |
 | RAF-DB | 7 classes | Direct mapping |
 | AffectNet | 8 classes | Drop 'contempt' or merge with 'neutral' |
 | CK+ | 7 classes + AU | Direct mapping |
@@ -64,7 +64,7 @@ Epochs: 20
 ### Phase 2: Fine-tuning
 
 ```
-Dataset: FER2013 + RAF-DB
+Dataset: FER2013 + RAF-DB — historical baseline only; shipped product is RAF-DB alone
 Task: Expression classification
 Model: Backbone + classifier head
 Epochs: 50
@@ -90,7 +90,7 @@ Metrics: Accuracy, F1, confusion matrix
 ### Phase 5: Cross-Dataset Test
 
 ```
-Train: FER2013 + RAF-DB
+Train: FER2013 + RAF-DB — historical baseline only; shipped product is RAF-DB alone
 Test: CK+ (unseen)
 Report: Generalization gap
 ```
@@ -135,7 +135,7 @@ val_transform = transforms.Compose([
 | Random seed | 42 |
 | Deterministic ops | torch.use_deterministic_algorithms(True) |
 | Config file | configs/experiment_{id}.yaml |
-| Package lock | requirements.txt with pinned versions |
+| Package lock | requirements.lock (pinned) alongside requirements.txt (>= ranges) |
 | Dataset manifest | SHA256 checksums for all files |
 | Model checkpoint | Hash stored in registry |
 | Training logs | WandB or TensorBoard |
@@ -144,7 +144,7 @@ val_transform = transforms.Compose([
 
 ## 6. Dataset Access Checklist
 
-- [ ] FER2013: Verify Kaggle access
+- [ ] FER2013: Verify Kaggle access — historical baseline only; shipped product is RAF-DB alone
 - [ ] RAF-DB: Request access if needed
 - [ ] AffectNet: Verify license and access
 - [ ] BP4D: Request from authors

@@ -47,7 +47,7 @@ EXP-002
 
 ## Status
 
-ACCEPTED — implemented in shipped code and covered by the test suite (104 tests).
+ACCEPTED — implemented in shipped code and covered by the test suite (109 tests).
 
 ---
 

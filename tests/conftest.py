@@ -7,7 +7,7 @@ throwaway SQLite file and skip the production model warm-load.
 import os
 import tempfile
 
-_fd, _db_path = tempfile.mkstemp(prefix="affecta_test_", suffix=".db")
+_fd, _db_path = tempfile.mkstemp(prefix="hfed_test_", suffix=".db")
 os.close(_fd)
 os.environ["AFFECTA_DB_URL"] = f"sqlite:///{_db_path}"
 os.environ["AFFECTA_WARM_MODEL"] = "0"

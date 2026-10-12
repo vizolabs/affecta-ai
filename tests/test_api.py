@@ -182,6 +182,43 @@ def test_login_rate_limit(client):
     assert r.status_code == 429
 
 
+def test_register_rate_limit(client):
+    """Register is limited to 5/min (two 210k-iteration PBKDF2 hashes per call)."""
+    for i in range(5):
+        r = client.post(
+            "/api/auth/register",
+            json={"email": f"{uuid.uuid4().hex[:10]}{i}@user.com", "password": "secret123"},
+        )
+        assert r.status_code == 200
+    r = client.post(
+        "/api/auth/register",
+        json={"email": f"{uuid.uuid4().hex[:10]}@user.com", "password": "secret123"},
+    )
+    assert r.status_code == 429
+
+
+def test_sessions_limit_param(client):
+    """GET /api/sessions accepts a bounded limit and rejects out-of-range values."""
+    headers, _, _ = auth_headers(client)
+    r = client.get("/api/sessions?limit=1", headers=headers)
+    assert r.status_code == 200
+    assert len(r.json()["data"]) <= 1
+    assert client.get("/api/sessions?limit=0", headers=headers).status_code == 422
+    assert client.get("/api/sessions?limit=100000", headers=headers).status_code == 422
+
+
+def test_analyze_photo_too_large_413(client):
+    """Oversized photo uploads are rejected at the API boundary (8MB)."""
+    headers, _, _ = auth_headers(client)
+    big = b"\xff\xd8\xff\xe0" + b"\x00" * (9 * 1024 * 1024)
+    r = client.post(
+        "/api/analyze",
+        headers=headers,
+        files={"file": ("huge.jpg", big, "image/jpeg")},
+    )
+    assert r.status_code == 413
+
+
 # ---- settings ----
 
 
@@ -739,7 +776,7 @@ def test_analytics_summary_timeline_and_exports(client, fake):
     assert r.content.rstrip().endswith(b"%%EOF")
 
     r = client.get(f"/api/analytics/export/{sid}?format=docx", headers=headers)
-    assert r.status_code == 400
+    assert r.status_code == 422  # Literal["pdf","csv","json"] rejects unknowns
 
 
 def test_session_ownership(client):

@@ -679,7 +679,9 @@ export default function LivePage() {
   }, [applyVerdict]);
 
   const wsUrl = useCallback(() => {
-    const params = new URLSearchParams({ token: token ?? "" });
+    // No token in the query string — it would land in the server access log.
+    // Auth is the first message after open (the server waits for it).
+    const params = new URLSearchParams();
     const title = sessionTitleRef.current.trim();
     if (title) params.set("title", title.slice(0, 120));
     params.set("fps", String(analysisFps));
@@ -689,8 +691,12 @@ export default function LivePage() {
     if (xaiModeRef.current === "transition") {
       params.set("xai_interval", String(NO_INTERVAL));
     }
-    return `${WS_URL}/ws/emotion-stream?${params.toString()}`;
-  }, [token, analysisFps, isPeriodic, intervalMs, motionEnabled]);
+    const qs = params.toString();
+    return `${WS_URL}/ws/emotion-stream${qs ? `?${qs}` : ""}`;
+  }, [analysisFps, isPeriodic, intervalMs, motionEnabled]);
+
+  const openWsRef = useRef<() => void>(() => {});
+  const teardownRef = useRef<() => void>(() => {});
 
   const openWs = useCallback(() => {
     intentionalCloseRef.current = false;
@@ -709,6 +715,9 @@ export default function LivePage() {
       retryRef.current = 0;
       setWsStatus("open");
       setError(null);
+      // First message = auth (keeps the bearer token out of the URL and the
+      // server access log). The server blocks on this before any frames.
+      if (token) ws.send(JSON.stringify({ action: "auth", token }));
       if (!pausedRef.current) startSendTimer();
     };
     ws.onclose = (event) => {
@@ -718,8 +727,13 @@ export default function LivePage() {
         return;
       }
       if (event.code === 4001) {
-        setError("WebSocket auth failed — please sign in again.");
-        setWsStatus("closed");
+        // Token rejected — stop the camera and bounce to the login portal
+        // instead of leaving the webcam light on with a dead socket.
+        setError("Session expired — please sign in again.");
+        const { clear } = useAuth.getState();
+        clear();
+        teardownRef.current();
+        window.location.href = "/";
         return;
       }
       if (event.code === 1013) {
@@ -733,13 +747,15 @@ export default function LivePage() {
         retryRef.current += 1;
         setWsStatus("reconnecting");
         window.setTimeout(() => {
+          // openWsRef so fps/mode changes made during the outage are picked
+          // up instead of reconnecting with a stale query string.
           if (wsRef.current === ws && !intentionalCloseRef.current) {
-            openWs();
+            openWsRef.current();
           }
         }, Math.min(8000, 1000 * 2 ** attempt));
       } else {
         setWsStatus("closed");
-        setError("Connection lost — press Start to reconnect.");
+        setError("Connection lost. Press Reconnect to try again.");
       }
     };
     ws.onerror = () => {
@@ -747,7 +763,15 @@ export default function LivePage() {
         setError("WebSocket error — is the API running?");
       }
     };
-  }, [wsUrl, handleMessage, startSendTimer, stopSendTimer]);
+  }, [wsUrl, token, handleMessage, startSendTimer, stopSendTimer]);
+
+  openWsRef.current = openWs;
+
+  const reconnect = useCallback(() => {
+    retryRef.current = 0;
+    setError(null);
+    openWs();
+  }, [openWs]);
 
   /* ---------- start / stop ---------- */
   const teardown = useCallback(() => {
@@ -782,6 +806,8 @@ export default function LivePage() {
       window.speechSynthesis.cancel();
     }
   }, [stopSendTimer, stopPreviewLoop, stopMotionWatch]);
+
+  teardownRef.current = teardown;
 
   const start = useCallback(async () => {
     if (!token) return;
@@ -1066,6 +1092,9 @@ export default function LivePage() {
               <Button onClick={start}>Start</Button>
             ) : (
               <>
+                {wsStatus === "closed" && (
+                  <Button onClick={reconnect}>Reconnect</Button>
+                )}
                 <Button variant="ghost" onClick={togglePause}>
                   {paused ? "Resume" : "Pause"}
                 </Button>
@@ -1146,9 +1175,9 @@ export default function LivePage() {
         <Card title="Narrator" action={
           <span className="text-xs text-muted">{narration.length} lines</span>
         }>
-          <div aria-live="polite" aria-atomic="false">
-            <CommentaryPanel lines={narration} />
-          </div>
+          {/* CommentaryPanel owns its own aria-live region — nesting another
+              one here would double-announce every narration line. */}
+          <CommentaryPanel lines={narration} />
         </Card>
       </div>
 
@@ -1246,6 +1275,7 @@ export default function LivePage() {
               <button
                 type="button"
                 aria-label="Close"
+                autoFocus
                 onClick={() => setHelpOpen(false)}
                 className="text-muted hover:text-foreground"
               >

@@ -5,6 +5,8 @@ Status: LOCKED
 Version: V1.0
 ```
 
+As shipped: the AU head is untrained (w_AU = 0). AU values are reported as status 'untrained' and omitted from live analysis payloads (ADR-003).
+
 ---
 
 ## 1. What Are Action Units?

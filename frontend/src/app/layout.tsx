@@ -30,13 +30,20 @@ export const metadata: Metadata = {
   },
 };
 
+// Apply the persisted theme before paint so a light-theme user doesn't get
+// a hydration mismatch / dark flash (SSR can't know localStorage).
+const themeInit = `try{var t=localStorage.getItem("hfd-theme");if(t==="light"){document.documentElement.classList.remove("dark")}else if(t==="dark"){document.documentElement.classList.add("dark")}}catch(e){}`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

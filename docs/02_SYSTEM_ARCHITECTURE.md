@@ -5,6 +5,15 @@ Status: LOCKED
 Version: V1.0
 ```
 
+## As-built (2026-10-11)
+Pre-build document. Shipped reality:
+- Camera: getUserMedia → WebSocket (NOT WebRTC)
+- Database: SQLite at data/app.db (NOT PostgreSQL; no Docker)
+- Backend port: 8765 (NOT 8000)
+- Single-person mode (max_faces=1) — multi-face tracking not shipped
+- AU module untrained (w_AU=0)
+- Production XAI: Grad-CAM; LRP offline/research-only
+
 ---
 
 ## 1. High-Level Architecture
@@ -31,7 +40,7 @@ Version: V1.0
 │         └────────────┴──────┬──────┴──────────────┘               │
 │                             │                                     │
 │  ┌──────────────────────────┴──────────────────────────┐        │
-│  │              PostgreSQL Database                     │        │
+│  │              PostgreSQL Database (shipped: SQLite)    │        │
 │  │    (Users, Sessions, Events, XAI Snapshots)         │        │
 │  └─────────────────────────────────────────────────────┘        │
 └──────────────────────────────────────────────────────────────────┘
@@ -112,7 +121,7 @@ LRP and detailed XAI compute when:
 - **In-process**: PyTorch inference (no IPC overhead)
 
 ### Database
-- **PostgreSQL**: Persistent storage
+- **PostgreSQL (shipped: SQLite)**: Persistent storage
 - **In-memory**: Real-time buffers, temporal history
 
 ---
@@ -122,8 +131,8 @@ LRP and detailed XAI compute when:
 ### Development
 ```
 Frontend: localhost:3000 (Next.js dev)
-Backend: localhost:8000 (Uvicorn)
-Database: localhost:5432 (PostgreSQL)
+Backend: localhost:8765 (Uvicorn)
+Database: localhost:5432 (PostgreSQL) (shipped: SQLite)
 ```
 
 ### Production
@@ -133,6 +142,7 @@ Database: localhost:5432 (PostgreSQL)
 │  (Frontend) │     │  (Backend)  │     │  (Database) │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
+(PostgreSQL entries above: shipped reality is SQLite — see As-built section.)
 
 ---
 

@@ -5,6 +5,9 @@ Status: LOCKED
 Version: V1.0
 ```
 
+## As-shipped annotations
+AU evidence below comes from the untrained AU head (w_AU=0) — not model output. Production explanations are Grad-CAM (LRP offline-only). Single-person mode (max_faces=1): multi-face claims are engine-capable but not shipped.
+
 ---
 
 ## 1. Core Contribution
@@ -130,7 +133,7 @@ Detects when evidence is insufficient for reliable classification.
 - ✅ Model evidence explanation
 - ✅ Expression strength estimation
 - ✅ Temporal expression tracking
-- ✅ Multi-face analysis
+- ⚠ Engine supports multi-face; product ships single-person (max_faces=1)
 
 ---
 

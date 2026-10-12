@@ -167,6 +167,8 @@ See: `02_SYSTEM_ARCHITECTURE.md` for full details.
 | Real-time | WebSocket |
 | Deployment | Docker, Vercel/Railway |
 
+Shipped: getUserMedia+WebSocket / SQLite / local uvicorn+next (no Docker, no cloud)
+
 ---
 
 ## 12. Development Phases
@@ -200,7 +202,7 @@ unchecked items are honest gaps, annotated.
 - [x] LRP explanation (offline only — ml/xai, ADR-004)
 - [x] Region ranking (Grad-CAM mass over geometric regions)
 - [x] Grad-CAM comparison (served via Lab XAI inspector)
-- [x] Explanation faithfulness validated (ml/benchmarks/xai_probe.py)
+- [x] Explanation faithfulness probe tooling shipped (ml/benchmarks/xai_probe.py); formal insertion/deletion study pending
 
 ### Live System
 - [x] Camera integration (getUserMedia → WebSocket stream)

@@ -96,7 +96,7 @@ async def delete_session(session_id: UUID):
 
 ```python
 @router.get("/api/analytics/summary")
-async def get_summary(session_id: UUID = None):
+async def get_summary(session_id: UUID):
     """Get emotion summary."""
     pass
 
@@ -154,7 +154,7 @@ metadata so exports state what actually produced a run:
 | `interval` | periodic verdict-window seconds (clamped 30–600) | `applied_interval_seconds` (`null` in live mode) |
 | `motion` | `1`/`0` motion trigger | `motion_trigger` (`false` in live mode) |
 | `title` | session title | `title` |
-| `xai_interval` | Grad-CAM cadence override | — |
+| `xai_interval` | Grad-CAM cadence override (clamped [1,120]) | — |
 
 Cadence is enforced **client-side**; the server analyses whatever frames it
 receives and trusts nothing beyond the clamps above.
@@ -225,13 +225,14 @@ class ApiResponse(BaseModel):
 
 ## 5. Rate Limiting
 
-```python
-from slowapi import Limiter
+Hand-rolled per-IP limiter (login 10/min, register 5/min):
 
-limiter = Limiter(key_func=get_remote_address)
+```python
+# No slowapi — a small in-process per-IP counter guards the auth routes:
+#   login:    10 attempts / minute / IP
+#   register:  5 attempts / minute / IP
 
 @router.post("/api/auth/login")
-@limiter.limit("10/minute")
 async def login(...):
     pass
 ```

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Card from "../../../components/common/Card";
+import Button from "../../../components/common/Button";
 import { apiFetch } from "../../../lib/api";
 import { sessionLabel } from "../../../lib/sessions";
 import type { SessionOut } from "../../../lib/types";
@@ -36,20 +37,29 @@ export default function DashboardPage() {
   usePageTitle("Dashboard");
   const token = useAuth((s) => s.token);
   const [sessions, setSessions] = useState<SessionOut[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setSessions(null);
+    setLoadError(false);
     apiFetch<SessionOut[]>("/api/sessions?limit=5", {}, token)
       .then((data) => {
         if (!cancelled) setSessions(data);
       })
       .catch(() => {
-        if (!cancelled) setSessions([]);
+        // Distinguish "API unreachable" from "no sessions" — the empty
+        // state must not falsely tell the user their data is gone.
+        if (!cancelled) {
+          setSessions([]);
+          setLoadError(true);
+        }
       });
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, reloadKey]);
 
   return (
     <div className="mx-auto grid max-w-5xl gap-4">
@@ -95,7 +105,18 @@ export default function DashboardPage() {
         </Card>
 
         <Card title="Recent sessions">
-          {sessions === null ? (
+          {loadError ? (
+            <div className="text-sm text-muted">
+              <p>Couldn&apos;t reach the local API.</p>
+              <Button
+                variant="ghost"
+                className="mt-2"
+                onClick={() => setReloadKey((k) => k + 1)}
+              >
+                Retry
+              </Button>
+            </div>
+          ) : sessions === null ? (
             <div className="space-y-2">
               <div className="h-10 animate-pulse rounded bg-border/50" />
               <div className="h-10 animate-pulse rounded bg-border/50" />
@@ -121,7 +142,7 @@ export default function DashboardPage() {
               {sessions.map((s) => (
                 <li key={s.id}>
                   <Link
-                    href="/analytics"
+                    href={`/analytics?session=${s.id}`}
                     className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm transition hover:border-accent/60"
                   >
                     <span className="truncate">{sessionLabel(s)}</span>

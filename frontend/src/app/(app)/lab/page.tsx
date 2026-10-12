@@ -37,21 +37,29 @@ export default function LabPage() {
 
   const isVideo = file?.type.startsWith("video/") ?? false;
 
-  const loadModels = (tok: string | null) => {
+  const loadModels = (tok: string | null, cancelled?: { value: boolean }) => {
     setModelsLoading(true);
     setModelsError(false);
     apiFetch<ModelInfo[]>("/api/models", {}, tok)
       .then((data) => {
+        if (cancelled?.value) return;
         setModels(data);
       })
       .catch(() => {
+        if (cancelled?.value) return;
         setModelsError(true);
       })
-      .finally(() => setModelsLoading(false));
+      .finally(() => {
+        if (!cancelled?.value) setModelsLoading(false);
+      });
   };
 
   useEffect(() => {
-    loadModels(token);
+    const cancelled = { value: false };
+    loadModels(token, cancelled);
+    return () => {
+      cancelled.value = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 

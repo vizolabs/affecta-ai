@@ -1,5 +1,7 @@
 """SQLAlchemy engine/session setup (SQLite by default)."""
 
+import os
+
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
@@ -11,10 +13,25 @@ class Base(DeclarativeBase):
 
 
 def _make_engine():
-    kwargs = {}
-    if settings.db_url.startswith("sqlite"):
-        kwargs["connect_args"] = {"check_same_thread": False}
-    return create_engine(settings.db_url, future=True, **kwargs)
+    kwargs = {"future": True}
+    if not settings.db_url.startswith("sqlite"):
+        return create_engine(settings.db_url, **kwargs)
+
+    kwargs["connect_args"] = {"check_same_thread": False}
+    kwargs["pool_pre_ping"] = True
+    eng = create_engine(settings.db_url, **kwargs)
+
+    from sqlalchemy import event
+
+    @event.listens_for(eng, "connect")
+    def _sqlite_pragmas(dbapi_conn, _record):  # pragma: no cover - driver hook
+        cur = dbapi_conn.cursor()
+        cur.execute("PRAGMA journal_mode=WAL")
+        cur.execute("PRAGMA busy_timeout=8000")
+        cur.execute("PRAGMA foreign_keys=ON")
+        cur.close()
+
+    return eng
 
 
 engine = _make_engine()
@@ -126,6 +143,13 @@ def init_db() -> None:
 
     Base.metadata.create_all(engine)
     _ensure_columns()
+    # Restrict DB file permissions (emails + password hashes live here).
+    if settings.db_url.startswith("sqlite"):
+        db_path = settings.db_url.split("///", 1)[-1]
+        try:
+            os.chmod(db_path, 0o600)
+        except OSError:
+            pass
 
     with Session(engine) as db:
         for name, version, mtype, dataset, metrics, ckpt, status in _SEEDS:

@@ -25,7 +25,11 @@ export default function EmotionTimeline({ samples, max = 120 }: Props) {
 
   return (
     <div className="flex items-center gap-3 overflow-x-auto py-1">
-      <div className="flex h-8 shrink-0 gap-px" aria-label="Emotion timeline">
+      <div
+        className="flex h-8 shrink-0 gap-px"
+        role="img"
+        aria-label="Emotion timeline"
+      >
         {slice.map((sample, i) => {
           const face = sample.faces[0];
           const emotion = face?.emotion ?? "neutral";

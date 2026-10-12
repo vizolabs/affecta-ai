@@ -14,7 +14,7 @@ A real-time facial expression analysis system with evidence-ranked explainabilit
 | 4 | ens_dan+ddamfn (EXP-010) | 89.24% | 81.69% | ECE 0.018 (best-calibrated) |
 | 5 | DDAMFN++ (EXP-009) | 83.83% | 73.40% | released ckpt, RetinaFace-realigned test |
 | 6 | ViT-Small + 10-view TTA (EXP-008) | 78.88% | 73.23% | staged fine-tune (in-house) |
-| 7 | EfficientNet-B3 (EXP-007) | 66.49% | 59.13 F1 | staged 30-ep schedule (in-house) |
+| 7 | EfficientNet-B3 (EXP-007) | 66.49% | 59.13 F1 | staged 60-ep (3+7+10+40) schedule (in-house) |
 
 - DAN exactly reproduces the published 89.70% (arXiv:2304.03108) on our official split.
 - Temperature scaling on the champion ensemble: ECE 0.113 → 0.087 (T=0.257, val-fitted).
@@ -28,7 +28,7 @@ A real-time facial expression analysis system with evidence-ranked explainabilit
 ## Architecture
 
 - **Frontend**: Next.js 14 (App Router) + TypeScript + Tailwind — sci-fi login portal, Live Observer (verdict mode), Research Lab, Analytics
-- **Backend**: FastAPI (Python 3.12) + JWT auth + WebSocket emotion stream
+- **Backend**: FastAPI (Python 3.12) + HMAC bearer-token auth (PBKDF2 passwords) + WebSocket emotion stream
 - **ML Models**: PyTorch (DAN / DDAMFN++ / ViT-Small / EfficientNet-B3)
 - **Database**: SQLite (Postgres-compatible SQLAlchemy schema)
 - **Real-time**: camera frames via `getUserMedia`, streamed over WebSocket (no WebRTC)
@@ -64,7 +64,7 @@ Canonical order (`src/core.config.EMOTIONS`, alphabetical — all production mod
 │   ├── xai/                # LRP-epsilon, Grad-CAM, region mapping
 │   └── benchmarks/         # calibration (ECE/T-scaling), latency, XAI probe
 ├── scripts/                # prepare_rafdb, ensemble_production, report generator
-├── tests/                  # pytest suite (104 tests, all passing)
+├── tests/                  # pytest suite (109 tests, all passing)
 ├── experiments/            # EXP-004…011 results + checkpoints
 ├── docs/                   # numbered specs 00–22 + ADRs
 └── data/                   # raw + processed RAF-DB (gitignored)
@@ -72,7 +72,7 @@ Canonical order (`src/core.config.EMOTIONS`, alphabetical — all production mod
 
 ## Quick Start
 
-Requires **Python 3.12** and **Node 18+**.
+Requires **Python 3.12**, **Node 18+** and **GNU make** (skip on Windows — see how_to_run_the_project.txt).
 
 ### 1. Install Dependencies
 
@@ -117,6 +117,8 @@ Without weights the API **still starts** and serves the UI; analysis endpoints r
 make run            # API on http://127.0.0.1:8765 + web on http://127.0.0.1:3000
 ```
 
+`make run` uses the Next.js dev server; for a production build run `cd frontend && npm run build && npm run start`.
+
 Open http://127.0.0.1:3000 — register a local account, then try **Live Observer**
 (camera verdict mode), **Research Lab** (photo XAI) and **Analytics** (exports).
 Step-by-step Windows guide: `how_to_run_the_project.txt`.
@@ -149,7 +151,7 @@ make train-expression          # staged RAF-DB fine-tune (ml/train.py)
 make evaluate                  # test metrics for a run
 python scripts/ensemble_production.py   # DAN+DDAMFN+ViT leaderboard, TTA, T-scaling
 make report                    # regenerate Human_Facial_Emotion_Detection_Project_Report.docx
-make test                      # 104 pytest tests (REST + WebSocket + ML)
+make test                      # 109 pytest tests (REST + WebSocket + ML)
 ```
 
 ## Development Roadmap

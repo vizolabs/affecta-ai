@@ -11,23 +11,57 @@ from sqlalchemy.orm import Session as DBSession
 from src.api.core.database import get_db, SessionLocal
 from src.api.core.deps import get_current_user
 from src.api.models import ModelRegistry, SettingsRow, User
-from src.api.schemas import ok
+from src.api.schemas import Responses, ok
 from src.api.services.inference import SessionAnalysis
 from src.api.services.video import VideoDecodeError, analyze_video
 
-router = APIRouter()
+router = APIRouter(tags=["Research Lab"])
 
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
+MAX_VIDEO_BYTES = 60 * 1024 * 1024
 
-_UNAUTHORIZED = {401: {"description": "Invalid or expired credentials"}}
-_NO_MODEL = {
+_UNAUTHORIZED: Responses = {401: {"description": "Invalid or expired credentials"}}
+_NO_MODEL: Responses = {
     401: _UNAUTHORIZED[401],
-    503: {"description": "Model weights not installed on this server (see README)"},
+    413: {"description": "Upload exceeds the size limit"},
+    503: {"description": "Model failed to load (missing or corrupt weights — see README)"},
 }
 
 
+async def _read_bounded(file: UploadFile, limit: int) -> bytes:
+    """Read the upload in chunks, aborting as soon as the limit is crossed.
+
+    A naive `await file.read()` loads the whole body into RAM *before* any
+    size check, so one multi-GB upload could exhaust memory.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while chunk := await file.read(1024 * 1024):
+        total += len(chunk)
+        if total > limit:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large (max {limit // (1024 * 1024)}MB)",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 def _require_model(service) -> None:
+    # One lazy retry: weights installed after startup recover without a
+    # server restart (load_model is idempotent once loaded).
     if not getattr(service, "loaded", False):
+        try:
+            service.load_model()
+        except Exception:
+            pass
+    if not getattr(service, "loaded", False):
+        err = getattr(service, "load_error", None)
+        if err:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Model failed to load: {err}",
+            )
         raise HTTPException(
             status_code=503,
             detail=(
@@ -45,11 +79,9 @@ async def analyze(
     face_id: int = Form(0),
     user: User = Depends(get_current_user),
 ):
-    data = await file.read()
+    data = await _read_bounded(file, MAX_UPLOAD_BYTES)
     if len(data) == 0:
         raise HTTPException(status_code=400, detail="Empty upload")
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=400, detail="File too large (max 8MB)")
 
     service = request.app.state.service
     _require_model(service)
@@ -62,6 +94,10 @@ async def analyze(
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        # MPS/CUDA OOM, cv2 errors, shape mismatches — surface a safe
+        # message instead of a bare 500 (the WS path already does this).
+        raise HTTPException(status_code=503, detail=f"Analysis failed: {exc}")
 
     if xai:
         target = face_id
@@ -102,7 +138,7 @@ async def analyze_video_upload(
     `debounce_seconds` defaults to the server's live-stream value; pass >= 0 to
     override it (0 = report every sampled flip, useful for research).
     """
-    data = await file.read()
+    data = await _read_bounded(file, MAX_VIDEO_BYTES)
     service = request.app.state.service
     _require_model(service)
     try:

@@ -45,6 +45,8 @@ Where:
 - T_e = temporal evidence
 - w_p + w_a + w_r + w_t = 1
 
+As shipped: w_p=0.6, w_a=0.0 (AU excluded — untrained), w_r=0.2, w_t=0.2. Library defaults [0.4, 0.25, 0.25, 0.1] are not used in production.
+
 ---
 
 ## 3. Feature Definitions

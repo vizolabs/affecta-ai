@@ -90,6 +90,9 @@ def analyze_video(
         fd, tmp_path = tempfile.mkstemp(prefix="hfed_video_", suffix=suffix or ".mp4")
         with os.fdopen(fd, "wb") as fh:
             fh.write(data)
+    except OSError as exc:
+        raise VideoDecodeError(f"could not stage upload for decoding: {exc}") from exc
+    try:
         cap = cv2.VideoCapture(tmp_path)
         if not cap.isOpened():
             raise VideoDecodeError(

@@ -41,7 +41,7 @@ class Experiment:
 
 ## 3. Experiment IDs
 
-Reserved/planned IDs (from the research roadmap):
+ADR experiment IDs (reserved — superseded by on-disk EXP IDs):
 
 | ID | Name | Status |
 |----|------|--------|
@@ -58,7 +58,8 @@ Implemented runs (accuracy-first pivot, actual on-disk experiment IDs):
 | ID | Dataset | Backbone | Protocol | Test Acc | Test Macro-F1 | Status |
 |----|---------|----------|----------|----------|---------------|--------|
 | EXP-004-VGG16-CLEAN | FER2013 | VGG16 | official baseline | 67.84% | 66.58% | COMPLETED (historical) |
-| EXP-007-EFFICIENTNET-B3 | RAF-DB | EfficientNet-B3 | staged 30-ep schedule | 57.30% | 50.21% | COMPLETED |
+| EXP-005-RESNET50 | RAF-DB | ResNet-50 | staged 30-ep schedule | 62.38% | 58.02% | COMPLETED |
+| EXP-007-EFFICIENTNET-B3 | RAF-DB | EfficientNet-B3 | staged 3+7+10+40 (=60 ep) | 66.49% | 59.13% | COMPLETED |
 | EXP-008-VIT-SMALL | RAF-DB | ViT-Small | staged 30-ep → extended tail + 10-view TTA | 78.88% | 70.05% | COMPLETED |
 | EXP-009-DDAMFN-PP | RAF-DB | DDAMFN++ (released ckpt) | reproduced on our test (MTCNN / RetinaFace-realigned) | 82.40% / 83.83% | — (bacc 73.40% RF) | COMPLETED |
 | EXP-010-ENSEMBLE | RAF-DB | DAN+DDAMFN++±ViT | avg-probs + TTA + T-scaling (val-fitted) | **ens_dan+ddamfn+vit 89.99%** (ens_dan+vit bacc 83.12%; T-scaling ECE 0.113→0.087) | bacc 82.90% | COMPLETED |
@@ -74,7 +75,7 @@ Deliverables per run: `experiments/<ID>/checkpoints/{best,last}.pt`, `test_metri
 ```
 experiments/
 ├── EXP-001_backbone_comparison/
-│   ├── config.yaml
+│   ├── config.json
 │   ├── metrics.json
 │   ├── checkpoints/
 │   ├── plots/
@@ -88,46 +89,40 @@ experiments/
 
 ## 5. Config File Format
 
-```yaml
-# experiments/EXP-001/config.yaml
-experiment:
-  id: EXP-001
-  name: Backbone Comparison
-  hypothesis: "EfficientNet-B2 outperforms VGG16 and ResNet-50"
+Example: `experiments/EXP-001/config.json`
 
-dataset:
-  version: "v1.0"
-  splits:
-    train: ["FER2013", "RAF-DB"]
-    val: ["FER2013-split"]
-    test: ["CK+"]
-
-models:
-  - name: VGG16
-    backbone: vgg16
-    pretrained: true
-    classifier: [4096, 4096, 7]
-  
-  - name: EfficientNet-B2
-    backbone: efficientnet_b2
-    pretrained: true
-    classifier: [1408, 7]
-  
-  - name: ResNet-50
-    backbone: resnet50
-    pretrained: true
-    classifier: [2048, 7]
-
-training:
-  optimizer: AdamW
-  learning_rate: 0.0001
-  batch_size: 32
-  epochs: 50
-  early_stopping: 10
-  seed: 42
-
-evaluation:
-  metrics: ["accuracy", "macro_f1", "confusion_matrix"]
+```json
+{
+  "experiment": {
+    "id": "EXP-001",
+    "name": "Backbone Comparison",
+    "hypothesis": "EfficientNet-B2 outperforms VGG16 and ResNet-50"
+  },
+  "dataset": {
+    "version": "v1.0",
+    "splits": {
+      "train": ["FER2013", "RAF-DB"],
+      "val": ["FER2013-split"],
+      "test": ["CK+"]
+    }
+  },
+  "models": [
+    { "name": "VGG16", "backbone": "vgg16", "pretrained": true, "classifier": [4096, 4096, 7] },
+    { "name": "EfficientNet-B2", "backbone": "efficientnet_b2", "pretrained": true, "classifier": [1408, 7] },
+    { "name": "ResNet-50", "backbone": "resnet50", "pretrained": true, "classifier": [2048, 7] }
+  ],
+  "training": {
+    "optimizer": "AdamW",
+    "learning_rate": 0.0001,
+    "batch_size": 32,
+    "epochs": 50,
+    "early_stopping": 10,
+    "seed": 42
+  },
+  "evaluation": {
+    "metrics": ["accuracy", "macro_f1", "confusion_matrix"]
+  }
+}
 ```
 
 ---
@@ -164,14 +159,14 @@ evaluation:
 
 ## 7. Reproducibility Checklist
 
-- [ ] Random seed fixed (42)
-- [ ] Dataset version recorded
-- [ ] Config file saved
-- [ ] Package versions pinned (requirements.txt)
-- [ ] Checkpoint hash recorded
-- [ ] Training logs saved
-- [ ] Evaluation scripts versioned
-- [ ] Results documented
+- [x] Random seed fixed (42)
+- [ ] Dataset version recorded — not shipped
+- [ ] Config file saved — not shipped
+- [x] Package versions pinned (requirements.lock alongside requirements.txt)
+- [ ] Checkpoint hash recorded — not shipped
+- [ ] Training logs saved — not shipped
+- [ ] Evaluation scripts versioned — not shipped
+- [x] Results documented (results committed under experiments/)
 
 ---
 

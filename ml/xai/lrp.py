@@ -52,6 +52,11 @@ class LRPEngine:
         seed[0, target_class] = out[0, target_class]
         out.backward(gradient=seed)
 
+        if x.grad is None:
+            raise RuntimeError(
+                "no gradient reached the input — was the model wrapped in "
+                "inference_mode/no_grad, or is the input detached from the graph?"
+            )
         relevance = x.grad * x
         relevance = relevance.mean(dim=1, keepdim=True)
         return relevance

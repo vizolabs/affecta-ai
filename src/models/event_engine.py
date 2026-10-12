@@ -76,7 +76,7 @@ class EventEngine:
         self.first_seen: Dict[int, float] = {}
         self.last_seen: Dict[int, float] = {}
         self.emotion_since: Dict[int, dict] = {}  # track -> {"emotion": e, "t": t}
-        self.stabilization_fired: Dict[int, str] = {}
+        self.stabilization_fired: Dict[int, Optional[str]] = {}
         self.exited: Dict[int, bool] = {}
         self.pending_transition: Dict[int, dict] = {}
 

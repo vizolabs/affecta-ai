@@ -39,7 +39,7 @@ class ModelRecord:
 {project}-{type}-{version}
 
 Examples:
-affecta-expression-v1.0.0
+hfed-expression-v1.0.0
 affecta-au-v1.0.0
 affecta-intensity-v1.0.0
 affecta-ranking-v1.0.0
@@ -132,22 +132,19 @@ CREATE TABLE model_registry (
 ```json
 {
     "id": "550e8400-e29b-41d4-a716-446655440000",
-    "model_name": "affecta-expression",
-    "version": "v1.0.0",
+    "model_name": "hfed-expression",
+    "version": "dan/1.0",
     "model_type": "expression",
-    "dataset_used": "FER2013+RAF-DB",
+    "dataset_used": "RAF-DB",
     "training_config": {
-        "backbone": "efficientnet-b2",
-        "epochs": 50,
-        "learning_rate": 0.0001,
-        "batch_size": 32
+        "backbone": "dan",
+        "seed": 42
     },
     "metrics": {
-        "accuracy": 0.742,
-        "macro_f1": 0.731,
-        "cross_dataset_accuracy": 0.68
+        "test_acc": 89.70,
+        "test_bacc": 82.75
     },
-    "checkpoint_path": "/models/affecta-expression-v1.0.0.pt",
+    "checkpoint_path": "data/raw/dan_weights/RAF-DB.pth",
     "checksum": "sha256:abc123...",
     "status": "deployed",
     "created_at": "2026-09-15T10:00:00Z",

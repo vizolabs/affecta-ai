@@ -13,7 +13,6 @@ exclude =
     data,
     experiments,
     notebooks,
-    study_timer,
     .pytest_cache,
     # Vendored third-party model implementations (attribution in README)
     ml/models/dan.py,

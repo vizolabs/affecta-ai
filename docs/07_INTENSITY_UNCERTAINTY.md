@@ -5,6 +5,8 @@ Status: LOCKED (concept) / EXPERIMENTAL (architecture, thresholds)
 Version: V1.0
 ```
 
+As shipped: intensity is a distribution-extremity proxy (peak softmax distance from uniform), not a trained regressor (ADR-005).
+
 ---
 
 ## 1. Expression Intensity

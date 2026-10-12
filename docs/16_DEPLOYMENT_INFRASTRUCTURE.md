@@ -25,7 +25,7 @@ make serve-web    # cd frontend && npm run dev
 - Database: SQLite at `data/app.db` (created automatically; Postgres-compatible
   SQLAlchemy schema, but Postgres is **not** deployed or required).
 - WebSocket emotion stream is served by the same uvicorn process
-  (`/ws/analyze`), not a separate service.
+  (`/ws/emotion-stream`), not a separate service.
 
 ---
 
@@ -51,10 +51,15 @@ AFFECTA_TOKEN_TTL=604800                 # bearer token TTL seconds (default 7 d
 AFFECTA_MODEL=dan                        # default production model name
 AFFECTA_WARM_MODEL=1                     # 0 = start without loading weights
 AFFECTA_TRANSITION_DEBOUNCE_SECONDS=1.0  # event debounce window
+AFFECTA_LOG_LEVEL=INFO                   # log level (default INFO; now read)
+AFFECTA_CORS_ORIGINS=                    # comma-separated origins; unset = Next dev defaults
 ```
 
 The token secret is generated on first run into `data/.token_secret`
 (gitignored) — no env var needed.
+
+> **Note:** Token revocation is process-local — run uvicorn with a single
+> worker (the Makefile default).
 
 ### Frontend (`frontend/.env.local`)
 
@@ -70,7 +75,7 @@ No hosted CI is configured for this local-first project. The gate before any
 commit is:
 
 ```bash
-make test    # pytest tests/  (104 tests: REST, WebSocket, ML, narrator)
+make test    # pytest tests/  (109 tests: REST, WebSocket, ML, narrator)
 make lint    # flake8 + mypy (flake8 config in .flake8)
 cd frontend && npm run build
 ```

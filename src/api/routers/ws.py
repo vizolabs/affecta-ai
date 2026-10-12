@@ -82,20 +82,58 @@ def _persist_events(db, session_id: str, events) -> None:
             confidence=ev.confidence,
             intensity=ev.intensity,
             certainty=ev.certainty,
-            metadata_=ev.metadata or None,
+            # Intensity deltas (docs/20) ride in metadata so CSV/JSON/PDF
+            # exports and the timeline endpoint keep them.
+            metadata_={
+                **(ev.metadata or {}),
+                **(
+                    {"from_intensity": ev.from_intensity}
+                    if ev.from_intensity is not None
+                    else {}
+                ),
+                **(
+                    {"to_intensity": ev.to_intensity}
+                    if ev.to_intensity is not None
+                    else {}
+                ),
+            },
         )
         for ev in events
     ]
     db.add_all(rows)
-    db.commit()
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        # Account deleted / session row gone mid-stream: with foreign_keys=ON
+        # this raises instead of writing orphans. Drop quietly; the finally
+        # block finalises whatever still exists.
+        db.rollback()
 
 
 def _flush_timeline(db, session_row: SessionRow, analysis: SessionAnalysis, model: str) -> None:
     meta = dict(session_row.meta or {})
     meta["timeline"] = analysis.timeline
     meta["model"] = model
+    # Small distribution summary so sessionLabel() can name sessions by
+    # their dominant emotion (frontend lib/sessions.ts).
+    counts: dict = {}
+    for sample in analysis.timeline:
+        for face in sample.get("faces", []):
+            emo = face.get("emotion")
+            if emo:
+                counts[emo] = counts.get(emo, 0) + 1
+    if counts:
+        total = sum(counts.values())
+        meta["expression_distribution"] = {
+            emo: round(n / total, 3) for emo, n in sorted(
+                counts.items(), key=lambda kv: -kv[1]
+            )[:3]
+        }
     session_row.meta = meta
-    db.commit()
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
 
 
 async def _read_token(websocket: WebSocket) -> Optional[str]:
@@ -132,7 +170,6 @@ async def emotion_stream(websocket: WebSocket):
     if counts.get(user_id, 0) >= MAX_WS_CONNECTIONS_PER_USER:
         await websocket.close(code=1013)
         return
-    counts[user_id] = counts.get(user_id, 0) + 1
 
     prefs = _load_user_prefs(user_id)
     qp = websocket.query_params
@@ -182,10 +219,21 @@ async def emotion_stream(websocket: WebSocket):
         },
     )
     db.add(session_row)
-    db.commit()
+    try:
+        db.commit()
+    except SQLAlchemyError:
+        # A DB failure here would leak a connection slot if the counter were
+        # already incremented — fail before taking one.
+        db.rollback()
+        db.close()
+        await websocket.close(code=1011)
+        return
     session_id = session_row.id
     t_start = time.time()
     total_events = 0
+
+    # Increment only after setup succeeded; the finally below decrements.
+    counts[user_id] = counts.get(user_id, 0) + 1
 
     await websocket.send_json({"type": "session", "session_id": session_id})
 
@@ -282,7 +330,14 @@ async def _handle_control(websocket, db, session_row, analysis: SessionAnalysis,
                 region_relevance=result.get("regions"),
             )
         )
-        db.commit()
+        try:
+            db.commit()
+        except SQLAlchemyError:
+            db.rollback()
+            await websocket.send_json(
+                {"type": "error", "error": "could not persist XAI snapshot"}
+            )
+            return
         await websocket.send_json({"type": "xai", **result})
         return
 

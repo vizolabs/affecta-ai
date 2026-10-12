@@ -147,7 +147,7 @@ export default function AuthShell({
                   {titleLines[1]}
                 </span>
               </h1>
-              <p className="mt-3 max-w-sm text-xs leading-relaxed text-white/45">
+              <p className="mt-3 max-w-sm text-xs leading-relaxed text-white/60">
                 {tagline}
               </p>
             </header>
@@ -156,7 +156,7 @@ export default function AuthShell({
               {children}
             </div>
 
-            <div className="mt-8 flex items-center justify-between border-t border-white/[0.06] pt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/25">
+            <div className="mt-8 flex items-center justify-between border-t border-white/[0.06] pt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/60">
               <span>v1.0 · Local build</span>
               <span className="flex items-center gap-2">
                 <span className="h-1 w-1 animate-pulse rounded-full bg-emerald-400" />
@@ -229,18 +229,18 @@ export default function AuthShell({
             Affect Analysis
           </p>
           <div className="mt-3 h-px w-12 bg-cyan-300/50" />
-          <p className="mt-4 max-w-[13rem] text-[11px] leading-relaxed text-white/35">
+          <p className="mt-4 max-w-[13rem] text-[11px] leading-relaxed text-white/60">
             Real-time expression classification with ranked evidence, region
             attribution and calibrated confidence.
           </p>
         </div>
 
-        <div className="space-y-4 font-mono text-[10px] uppercase tracking-widest text-white/30">
+        <div className="space-y-4 font-mono text-[10px] uppercase tracking-widest text-white/60">
           {telemetry.map(([k, v]) => (
             <div key={k} className="flex items-center gap-3">
               <span className="inline-block h-1 w-1 rounded-full bg-cyan-300 shadow-[0_0_8px_rgba(103,232,249,0.9)]" />
               <span>{k}</span>
-              <span className="ml-auto text-white/55">{v}</span>
+              <span className="ml-auto text-white/60">{v}</span>
             </div>
           ))}
         </div>
@@ -266,14 +266,14 @@ export default function AuthShell({
                 </p>
               </div>
             </div>
-            <p className="mt-5 max-w-sm text-xs leading-relaxed text-white/45">
+            <p className="mt-5 max-w-sm text-xs leading-relaxed text-white/60">
               {tagline}
             </p>
           </header>
 
           {children}
 
-          <div className="mt-10 flex items-center justify-between border-t border-white/[0.06] pt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/25">
+          <div className="mt-10 flex items-center justify-between border-t border-white/[0.06] pt-4 font-mono text-[10px] uppercase tracking-[0.22em] text-white/60">
             <span>v1.0 · Local build</span>
             <span className="flex items-center gap-2">
               <span className="h-1 w-1 animate-pulse rounded-full bg-emerald-400" />

@@ -38,9 +38,12 @@ export default function SettingsPage() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [armedDelete, setArmedDelete] = useState(false);
   const [themeEdited, setThemeEdited] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setSettings(null);
+    setError(null);
     apiFetch<UserSettings>("/api/settings", {}, token)
       .then((data) => {
         if (!cancelled) setSettings(data);
@@ -53,7 +56,7 @@ export default function SettingsPage() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, reloadKey]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
@@ -130,6 +133,15 @@ export default function SettingsPage() {
         <p className="text-sm text-muted">
           {error ?? "Loading settings…"}
         </p>
+        {error && (
+          <Button
+            variant="ghost"
+            className="mt-2"
+            onClick={() => setReloadKey((k) => k + 1)}
+          >
+            Retry
+          </Button>
+        )}
       </Card>
     );
   }

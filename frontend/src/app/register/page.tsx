@@ -88,7 +88,7 @@ export default function RegisterPage() {
         <NeonButton disabled={busy}>{busy ? "Provisioning" : "Provision account"}</NeonButton>
       </form>
 
-      <p className="mt-7 text-center text-xs text-white/40">
+      <p className="mt-7 text-center text-xs text-white/60">
         Already provisioned?{" "}
         <Link
           href="/login"

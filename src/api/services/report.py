@@ -38,11 +38,14 @@ def compute_summary(row, events, timeline) -> dict:
         type_counts[e.event_type] = type_counts.get(e.event_type, 0) + 1
 
     meta = row.meta or {}
+    # Prefer live event rows over the denormalised session columns: those are
+    # only written when the WS closes, so a still-open or server-killed
+    # session would otherwise report "Events: 0" next to real transitions.
     return {
         "session_id": row.id,
         "duration_seconds": row.duration_seconds,
-        "total_frames": row.total_frames,
-        "total_events": row.total_events,
+        "total_frames": row.total_frames if row.total_events is not None else len(events),
+        "total_events": len(events) if events else (row.total_events or 0),
         "avg_confidence": row.avg_confidence,
         "avg_intensity": row.avg_intensity,
         "model": meta.get("model"),

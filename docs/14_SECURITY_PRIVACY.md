@@ -13,19 +13,19 @@ Version: V1.0
 
 | Requirement | Specification |
 |-------------|---------------|
-| Hashing | bcrypt (12 rounds) |
+| Hashing | bcrypt (12 rounds) — shipped: PBKDF2-HMAC (210k iters) |
 | Minimum length | 8 characters |
-| Complexity | Upper, lower, number, special |
+| Complexity | Upper, lower, number, special — shipped: min 8 chars, no complexity rule |
 | Storage | Hashed only, never plaintext |
 
 ### Session Management
 
 | Requirement | Specification |
 |-------------|---------------|
-| Token type | JWT or secure session cookie |
-| Access token lifetime | 15 minutes |
+| Token type | JWT or secure session cookie — shipped: custom HMAC bearer token |
+| Access token lifetime | 15 minutes — shipped: 7-day TTL |
 | Refresh token lifetime | 7 days |
-| Rotation | On each use |
+| Rotation | On each use — shipped: no rotation (logout revokes) |
 | Invalidation | On logout |
 
 ### Transport Security
@@ -69,7 +69,7 @@ Version: V1.0
 
 ```python
 # Login: 10 attempts per minute
-# API: 100 requests per minute
+# API-wide limiter not shipped (local-first); login 10/min + register 5/min per IP
 # WebSocket: 30 connections per user
 ```
 

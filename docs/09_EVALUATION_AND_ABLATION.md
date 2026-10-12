@@ -180,6 +180,8 @@ Accuracy: 61% (vs 82% normal)
 Degradation: -21%
 ```
 
+The 68% / 61% figures above are illustrative template values, not measured results.
+
 ---
 
 ## 6. Evaluation Scripts
@@ -196,3 +198,5 @@ evaluation/
 ├── eval_failure_modes.py   # Failure mode testing
 └── eval_ablation.py        # Ablation study
 ```
+
+(planned — not shipped; current tooling: ml/evaluate.py, ml/benchmarks/*, scripts/ensemble_production.py)

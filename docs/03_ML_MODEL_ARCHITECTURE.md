@@ -15,6 +15,16 @@ Version: V1.0
 | Model B: AU Detector | Action Unit detection | 6 AUs locked |
 | Model C: Ranking Engine | Evidence-scored ranking | Formula experimental |
 
+### Shipped production backbones (RAF-DB test, n=3068)
+
+| Backbone | Test Acc | Balanced Acc | Notes |
+|----------|----------|--------------|-------|
+| DAN | 89.70% | 82.75% | default serving model (released ckpt) |
+| 3-model ensemble (DAN+DDAMFN++ + ViT) | 89.99% | 82.90% | offline eval champion |
+| DDAMFN++ | 83.83% | 73.40% | released ckpt |
+| ViT-Small | 78.88% | 73.23% | in-house fine-tune + 10-view TTA |
+| EfficientNet-B3 | 66.49% | 59.13% | in-house; staged 60-ep schedule (3+7+10+40) |
+
 ---
 
 ## 2. Model A: Expression Classifier

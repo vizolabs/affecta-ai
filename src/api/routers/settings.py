@@ -8,11 +8,11 @@ from sqlalchemy.orm import Session as DBSession
 from src.api.core.database import get_db
 from src.api.core.deps import get_current_user
 from src.api.models import SettingsRow, User
-from src.api.schemas import Ok, SettingsOut, SettingsUpdate, ok
+from src.api.schemas import Ok, Responses, SettingsOut, SettingsUpdate, ok
 
-_UNAUTHORIZED = {401: {"description": "Invalid or expired credentials"}}
+_UNAUTHORIZED: Responses = {401: {"description": "Invalid or expired credentials"}}
 
-router = APIRouter()
+router = APIRouter(tags=["Settings"])
 
 
 def _get_or_create(user: User, db: DBSession) -> SettingsRow:

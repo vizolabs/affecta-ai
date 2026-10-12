@@ -9,7 +9,7 @@ Version: V1.0
 
 ## 1. The Real Suite (as shipped)
 
-One pytest suite: `pytest tests/` — **104 tests, all passing**. Run with
+One pytest suite: `pytest tests/` — **109 tests, all passing**. Run with
 `make test`.
 
 | File | Covers |
@@ -21,8 +21,7 @@ One pytest suite: `pytest tests/` — **104 tests, all passing**. Run with
 | `tests/test_production_webcam.py` | Haar detector on synthetic frames, headless `--image` pipeline, device pick |
 | `tests/test_tools.py` | LRP epsilon sanity, calibration ECE/T-scaling math, RAF-DB converter, evaluate |
 
-A real WebSocket integration test exercises the full
-`/ws/analyze` stream (connect → configure → frame → verdict flush → close).
+A WebSocket integration test exercises the /ws/emotion-stream auth handshake and frame processing.
 
 ### Frontend
 

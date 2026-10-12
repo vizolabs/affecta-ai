@@ -134,7 +134,7 @@ function RankLabels({ reduced }: { reduced: boolean }) {
       animate={{ opacity: 1 }}
       transition={{ delay: 0.7, duration: 0.6, ease: EASE }}
     >
-      <p className="sf-mono mb-5 whitespace-nowrap text-[9px] uppercase tracking-[0.32em] text-white/30">
+      <p className="sf-mono mb-5 whitespace-nowrap text-[9px] uppercase tracking-[0.32em] text-white/60">
         sample · illustrative
       </p>
       <div className="space-y-5">
@@ -360,11 +360,11 @@ export default function PortalPage() {
                 <div className="mt-5 flex items-center justify-between">
                   <Link
                     href="/register"
-                    className="sf-mono text-[10px] uppercase tracking-[0.24em] text-white/40 transition hover:text-[#00F0FF]"
+                    className="sf-mono text-[10px] uppercase tracking-[0.24em] text-white/60 transition hover:text-[#00F0FF]"
                   >
                     Provision an account →
                   </Link>
-                  <span className="sf-mono text-[10px] tracking-[0.2em] text-white/25">
+                  <span className="sf-mono text-[10px] tracking-[0.2em] text-white/60">
                     local
                   </span>
                 </div>
@@ -372,7 +372,7 @@ export default function PortalPage() {
             </div>
           </div>
 
-          <p className="sf-mono mt-6 text-center text-[10px] tracking-[0.22em] text-white/30 lg:text-left">
+          <p className="sf-mono mt-6 text-center text-[10px] tracking-[0.22em] text-white/60 lg:text-left">
             fully local · frames never leave this device
           </p>
         </motion.section>

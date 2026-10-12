@@ -17,7 +17,7 @@ SESSION OVERVIEW
 Session ID:     abc-123-def
 Duration:       03:42
 Total Frames:   3,420
-Faces Detected: 4
+Faces Detected: 1 (single-person mode)
 Start Time:     2026-09-10 14:32:00
 End Time:       2026-09-10 14:35:42
 ```
@@ -50,8 +50,8 @@ Duration of Happiness:  2.1 seconds (longest)
 Top Evidence:
 - Mouth region:        41%
 - Cheek region:        28%
-- AU12:                Strong
-- AU6:                 Strong
+- Happy probability:   0.89
+- AU evidence omitted — AU head untrained (w_AU=0)
 ```
 
 ### Section 4: Timeline

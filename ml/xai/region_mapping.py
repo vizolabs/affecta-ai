@@ -1,7 +1,7 @@
 """Facial region mapping for LRP aggregation."""
 
 import numpy as np
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 
 # 68-point facial landmark regions
@@ -93,7 +93,7 @@ def create_region_mask(
 def aggregate_relevance_by_region(
     relevance_map: np.ndarray,
     landmarks: np.ndarray,
-    regions: list = None
+    regions: Optional[list] = None
 ) -> Dict[str, float]:
     """Aggregate pixel-level relevance into facial regions.
     

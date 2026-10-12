@@ -103,11 +103,11 @@ Status as of V1.0 — see docs/00 §13 for the annotated Definition of Done.
 
 ## 6. Security Requirements
 
-- Passwords hashed (bcrypt)
-- Secure session management
+- Passwords hashed (bcrypt) — shipped: PBKDF2-HMAC (210k iters); min 8 chars, no complexity rule
+- Secure session management — shipped: custom HMAC bearer token; 7-day TTL; no rotation (logout revokes)
 - HTTPS in production
 - CSRF protection
-- Rate limiting
+- Rate limiting — shipped: API-wide limiter not shipped (local-first); login 10/min + register 5/min per IP
 - No raw video storage by default
 - User data deletion capability
 

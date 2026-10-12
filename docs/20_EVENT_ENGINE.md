@@ -139,7 +139,7 @@ def on_event(event):
 
 ---
 
-## 6. Narration Rules
+## 6. Narration Rules (engine-capable templates — the shipped single-person narrator always says 'Person 01')
 
 ### Transition
 

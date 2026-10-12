@@ -24,7 +24,8 @@ export default function Protected({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (mounted && !token) {
       setValidated(false);
-      router.replace("/login");
+      // "/" is the login portal — skips the extra /login -> / redirect hop.
+      router.replace("/");
     }
   }, [mounted, token, router]);
 
@@ -40,7 +41,7 @@ export default function Protected({ children }: { children: ReactNode }) {
         if (cancelled) return;
         if (err instanceof ApiError && err.status === 401) {
           useAuth.getState().clear();
-          router.replace("/login");
+          router.replace("/");
           return;
         }
         // API unreachable — let the app render; pages surface their own errors.

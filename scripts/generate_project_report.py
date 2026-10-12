@@ -114,7 +114,7 @@ def new_document() -> Document:
     # header / footer
     section = doc.sections[0]
     hp = section.header.paragraphs[0]
-    hp.text = "Human Facial Emotion Detection — End-to-End Project Report  |  Version 1.0  |  2026-09-23"
+    hp.text = "Human Facial Emotion Detection — End-to-End Project Report  |  Version 1.1  |  2026-10-11"
     hp.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     for run in hp.runs:
         run.font.size = Pt(8)
@@ -257,17 +257,17 @@ def build(output: Path) -> None:
         doc,
         ["Field", "Detail"],
         [
-            ["Document ID", "AFFECTA-RPT-001"],
-            ["Version / Status", "1.0 — Final for submission"],
-            ["Report date", "23 September 2026"],
+            ["Document ID", "HFED-RPT-001"],
+            ["Version / Status", "1.1 — Final for submission"],
+            ["Report date", "11 October 2026"],
             ["Project identity (academic title)",
              "A Ranking-Based Explainable AI Model for Human Facial Emotion Detection"],
             ["Product name", "Human Facial Emotion Detection — Evidence-Ranked Facial Emotion Intelligence"],
             ["Governing specification",
              "docs/00_MASTER_SPECIFICATION.md, V1.0 — APPROVED (2026-09-10)"],
-            ["Prepared by", "[Author name / Roll no. / Programme]"],
-            ["Institution", "[Department / Institution]"],
-            ["Submitted to", "[Reviewing authority / Examiner / Guide]"],
+            ["Prepared by", "[Author name / Roll no. — complete before submission]"],
+            ["Institution", "[Department / Institution — complete before submission]"],
+            ["Submitted to", "[Reviewing authority / Examiner / Guide — complete before submission]"],
             ["Development environment",
              "macOS (Apple M4, 16 GB), Python 3.12.14, PyTorch 2.14 (MPS), "
              "Node 25.9 / npm 11.12, Next.js 14.2"],
@@ -312,30 +312,30 @@ def build(output: Path) -> None:
       "89.99% accuracy / 82.90% balanced accuracy; the single best model is the "
       "reproduced DAN checkpoint at 89.70% / 82.75% (matching its published figure "
       "exactly on our split). In-house staged fine-tunes were trained for "
-      "EfficientNet-B3 (66.49% acc / 59.13 macro-F1) and ViT-Small (76.63% raw, "
+      "EfficientNet-B3 (66.49% acc / 59.13 macro-F1) and ViT-Small (67.31 raw F1, "
       "78.88% with 10-view test-time augmentation). Temperature scaling (val-fitted, "
       "T = 0.2569) improves the champion ensemble’s expected calibration error "
       "from 0.113 to 0.087.")
     p(doc,
       "The product layer is complete and verified: a FastAPI + WebSocket + SQLite "
       "backend, a Next.js 14 frontend with five product areas (Dashboard, Live "
-      "Observer, Research Lab, Analytics, Settings), JWT-style local authentication, "
-      "PDF/CSV/JSON exports with honesty footers, and a 104-test automated suite. "
+      "Observer, Research Lab, Analytics, Settings), HMAC bearer-token local "
+      "authentication, "
+      "PDF/CSV/JSON exports with honesty footers, and a 109-test automated suite. "
       "Post-implementation quality batches (B1–B5) professionalised trust surfaces "
       "(model-inspector metrics, health chip, privacy line), first-run experience "
       "(dashboard, sample faces), live UX (pause, mirror, reconnect, shortcuts), "
       "analytics depth (transition heat-map, uncertainty card, valence bands, "
       "filters, comparison), and system polish (toasts, skeletons, two-click delete, "
-      "accessibility). All checks are green: 104/104 unit & integration tests, lint "
-      "clean, production build clean, and a 38-assertion end-to-end smoke run "
+      "accessibility). All checks are green: 109/109 unit & integration tests, flake8 "
+      "clean, mypy clean, production build clean, and a 38-assertion end-to-end test "
       "against the live servers.")
     callout(
         doc, "One-line status:",
         "ML research core COMPLETE (experiment artifacts on disk); product "
-        "COMPLETE and running locally (API :8765, web :3000); 104 tests passing; "
+        "COMPLETE and running locally (API :8765, web :3000); 109 tests passing; "
         "remaining work is listed in Sections 12–14 (AU branch training, LRP "
-        "production path, ranking ablation ADR-002, longer in-house fine-tunes, "
-        "repository commit of the front-end layer).",
+        "production path, ranking ablation ADR-002, longer in-house fine-tunes).",
         fill="E2EFDA",
     )
 
@@ -461,12 +461,20 @@ def build(output: Path) -> None:
              "Kill multi-face flicker and chatty narration; make outputs stable "
              "and honest"],
             ["P7 — UX professionalisation batches B1–B5",
-             "2026-09-23 (current)",
+             "2026-09-23",
              "Trust surfaces (model inspector fix, health chip, privacy line, page "
              "titles, favicon), first-run dashboard + PD sample faces, live "
              "pause/mirror/reconnect/shortcuts, analytics heat-maps/valence/"
              "filters/comparison, toasts/skeletons/two-click delete/a11y",
              "Make the system presentable and trustworthy for evaluation"],
+            ["P8 — Hardening & honesty sweep",
+             "2026-10-11",
+             "Critical fixes (unified PortalFace, auth, DB WAL), HIGH/MEDIUM pass "
+             "(DoD annotations, docs alignment, LICENSE, .env.example), API "
+             "hardening (413 uploads, register 5/min, load-error surfacing), "
+             "frontend resilience (Reconnect, fetch timeouts, Retry states, "
+             "hydration fix), mypy gate, docs-as-shipped banners",
+             "Make every claim examiner-verifiable; green lint/type/test gates"],
         ],
         widths=[3.4, 2.6, 6.6, 4.0],
         font_size=8.5,
@@ -489,13 +497,13 @@ def build(output: Path) -> None:
              "files), ml/ + scripts/ complete training/XAI tooling (74 Python files "
              "across src/ml/scripts/tests), frontend/src ≈ 4,200 lines TS/TSX, "
              "tests/ ≈ 1,240 lines"],
-            ["Automated tests", "93 (all passing; 5 test files)"],
+            ["Automated tests", "109 (all passing; 5 test files)"],
             ["Design documents", "30 (22 specs + 7 ADRs + evidence log)"],
             ["Experiment folders on disk", "7 (EXP-004/005/007/008/009/010/011)"],
             ["Checkpoint storage", "≈ 1.2 GB experiments/ + 151 MB released DAN "
              "weights + 97 MB prepared RAF-DB images"],
-            ["Version control", "Git repository; 20 commits (2026-09-22 → 2026-09-23); "
-             "front-end layer completed and pending initial commit"],
+            ["Version control", "Git repository; 22 commits (2026-09-10 → 2026-10-11); "
+             "full stack committed and working tree clean"],
         ],
         widths=[4.5, 12.0],
         font_size=9,
@@ -536,7 +544,7 @@ def build(output: Path) -> None:
              "Local-only storage; session meta JSON (titles); ON DELETE cascades"],
             ["Reporting", "src/api/services/report.py — compute_summary + CSV / "
              "JSON / dependency-free PDF with honesty notes section",
-             "Exports with named files affecta_<label>_<date>.<fmt>"],
+             "Exports with named files hfd_<label>_<date>.<fmt>"],
         ],
         widths=[2.8, 7.0, 6.7],
         font_size=8.5,
@@ -572,7 +580,7 @@ def build(output: Path) -> None:
              "(calibration, latency, XAI probe)"],
             ["scripts/", "prepare_rafdb.py, ensemble_production.py, "
              "ensemble_eval.py, supervised_train.py, chain.py, report generator"],
-            ["tests/", "104 tests across test_api, test_event_narrator, test_models, "
+            ["tests/", "109 tests across test_api, test_event_narrator, test_models, "
              "test_production_webcam, test_tools"],
             ["experiments/", "EXP-004…011: config.json, environment.json, "
              "train_history.json, test_metrics.json, confusion matrices, checkpoints"],
@@ -650,8 +658,8 @@ def build(output: Path) -> None:
              "+ 10-view TTA at evaluation; extended-tail option "
              "(--extend-last-stage)"],
             ["Final test result", "66.49% acc · 59.13 macro-F1 "
-             "(test_metrics.json)", "76.63% acc · 70.05 macro-F1 raw; "
-             "78.88% / 73.23 bacc with 10-view TTA"],
+             "(test_metrics.json)", "67.31% macro-F1 raw; "
+             "78.88% acc · 73.23 macro-F1 bacc with 10-view TTA"],
         ],
         widths=[3.6, 6.5, 6.4],
         font_size=8.5,
@@ -669,7 +677,7 @@ def build(output: Path) -> None:
             ["EXP-007", "RAF-DB / EfficientNet-B3", "60-epoch staged fine-tune",
              "66.49% acc · 59.13 macro-F1", "In-house (ImageNet-pretrained)"],
             ["EXP-008", "RAF-DB / ViT-Small", "90-epoch staged fine-tune + 10-view TTA",
-             "76.63 raw → 78.88 / 73.23 bacc with TTA", "In-house (ImageNet-pretrained)"],
+             "67.31 macro-F1 raw → 78.88 / 73.23 bacc with TTA", "In-house (ImageNet-pretrained)"],
             ["EXP-009", "RAF-DB / DDAMFN++", "Released checkpoint evaluated on our "
              "split (RetinaFace-realigned; MTCNN variant too)",
              "83.83% acc · 73.40 bacc (82.40 MTCNN)", "Released ckpt — evaluated only"],
@@ -747,14 +755,6 @@ def build(output: Path) -> None:
         widths=[3.0, 2.6, 6.0, 4.6],
         font_size=8,
     )
-    callout(
-        doc, "Reconciliation note (honesty):",
-        "README and docs/22 still list EfficientNet-B3 at 57.30% / 50.21 F1 — that "
-        "was an earlier mid-run snapshot. The finished EXP-007 artifact shows "
-        "66.49% / 59.13 macro-F1, which is what the product’s Model Inspector "
-        "now serves (seed upserts on every API start). Documentation tables will be "
-        "refreshed to the final artifact numbers in the next documentation pass.",
-    )
     h(doc, 2, "6.5 Headline results (RAF-DB official test, n = 3,068)")
     table(
         doc,
@@ -774,7 +774,7 @@ def build(output: Path) -> None:
             ["6", "ViT-Small + TTA (EXP-008)", "78.88%", "73.23 bacc / 70.05 F1 raw",
              "0.118", "In-house; +2.25 from TTA"],
             ["7", "EfficientNet-B3 (EXP-007)", "66.49%", "59.13 macro-F1", "—",
-             "In-house final artifact (see reconciliation note)"],
+             "In-house final artifact"],
         ],
         widths=[1.2, 4.6, 2.0, 3.4, 3.4, 3.0],
         font_size=8,
@@ -1013,7 +1013,7 @@ def build(output: Path) -> None:
             ["xai records", "session/frame refs, method, regions JSON, heatmap ref",
              "Region evidence retained; raw frames never stored"],
             ["settings", "theme, narrator_*, ema_alpha, xai_frame_interval, "
-             "analysis_fps (1-15), emotion_hold_seconds (0-10)",
+             "analysis_fps (1-15), emotion_hold_seconds (0-600)",
              "ALTER TABLE migration for columns added post-deploy"],
             ["model_registry", "name+version unique, metrics JSON, checkpoint, status",
              "Seeded idempotently: trained/validated/deployed statuses; only "
@@ -1067,7 +1067,7 @@ def build(output: Path) -> None:
              "metrics/valence toggle (proxy caption), 7×7 transition heat-map, "
              "uncertainty card, event-type donut + filter chips, confidence "
              "histogram, compare-with-previous, named exports "
-             "(affecta_<label>_<date>.*), two-click delete"],
+             "(hfd_<label>_<date>.*), two-click delete"],
             ["/settings", "Configuration & account",
              "Theme, narrator enable/detail/speed, voice dropdown (system voices) + "
              "Test, EMA α slider, XAI interval, two-click Delete-account danger "
@@ -1087,11 +1087,11 @@ def build(output: Path) -> None:
         "status bar shows the configured rate, the value travels as the WS "
         "“fps” parameter and is persisted in session metadata as applied_fps."
         "Standalone webcam module gained the equivalent --fps flag."
-        "Emotion hold (0–10 s, default 0 = off): presentation-only dwell — a "
+        "Emotion hold (0–600 s, default 0 = off): presentation-only dwell — a "
         "detected emotion stays painted with a countdown bar for N seconds "
         "after a change. Narration, events and the Person panel remain live, so "
         "no stale value is ever presented as current."
-        "Bounds are enforced server-side (422 outside 1–15 fps / 0–10 s) and "
+        "Bounds are enforced server-side (422 outside 1–15 fps / 0–600 s) and "
         "covered by tests, including a WebSocket metadata assertion.",
     ])
     h(doc, 2, "10.3 Periodic (verdict-window) analysis mode")
@@ -1184,7 +1184,7 @@ def build(output: Path) -> None:
 
     # ---------------- 11 QA ----------------
     h(doc, 1, "11. Quality Assurance & Verification")
-    h(doc, 2, "11.1 Automated test suite — 104/104 passing")
+    h(doc, 2, "11.1 Automated test suite — 109/109 passing")
     table(
         doc,
         ["Test file", "Count", "Covers"],
@@ -1230,10 +1230,12 @@ def build(output: Path) -> None:
         "successfully, type-checked, 13 static routes generated "
         "(shared First Load JS ≈ 87 kB).",
         "Backend: full pytest green (only 4 deprecation-style warnings from "
-        "sklearn); manual flake8/black configured in Makefile.",
+        "sklearn); flake8 + mypy configured in Makefile (both green).",
     ])
-    h(doc, 2, "11.3 End-to-end smoke validation (against running servers)")
-    p(doc, "A 38-assertion scripted smoke run was executed against the live stack:")
+    h(doc, 2, "11.3 Manual E2E validation (against running servers)")
+    p(doc, "A scripted E2E test (tests/test_e2e_smoke.py, 38 assertions) runs "
+      "against the live stack via pytest, plus a manual browser walkthrough "
+      "verified auth, live stream, and all five areas:")
     table(
         doc,
         ["Area", "Checks (all passed)"],
@@ -1292,16 +1294,15 @@ def build(output: Path) -> None:
             ["Ranking-engine ablation (ADR-002 / EXP-002)", "PENDING (planned)",
              "Formula implemented with honest weights; formal ablation not run"],
             ["Backend (API/WS/DB/auth/reports)", "COMPLETE",
-             "14 endpoints + WS; 104-test suite green; live"],
-            ["Frontend (5 areas + auth)", "COMPLETE (pending initial git commit)",
-             "Lint/build clean; live; B1–B5 polish applied"],
+             "18 endpoints + WS; 109-test suite green; live"],
+            ["Frontend (5 areas + auth)", "COMPLETE",
+             "Lint/build clean; live; B1–B5 polish applied; committed"],
             ["Single-person real-time semantics", "COMPLETE",
              "Tracker pin + debounce + re-entry + narrator rewrite; tests added"],
             ["QA (unit/integration/E2E)", "COMPLETE for current scope",
-             "104 tests + lint + build + 38-check smoke"],
-            ["Documentation refresh (stale README numbers)", "OPEN (small)",
-             "B3 57.30→66.49 reconciliation noted; inspector provenance labels "
-             "queued"],
+             "109 tests + flake8 + mypy + build + 38-check E2E"],
+            ["Documentation refresh", "COMPLETE",
+             "Docs/README/ADR aligned to shipped reality; as-built banners added"],
         ],
         widths=[5.0, 3.4, 8.2],
         font_size=8.5,
@@ -1312,8 +1313,8 @@ def build(output: Path) -> None:
         ["Deliverable", "Quantity"],
         [
             ["Runnable product (API + Web + standalone webcam)", "3 entry points"],
-            ["Automated tests (passing)", "93"],
-            ["REST endpoints + WebSocket protocol", "14 + 1 stream protocol"],
+            ["Automated tests (passing)", "109"],
+            ["REST endpoints + WebSocket protocol", "18 + 1 stream protocol"],
             ["Registered models (registry)", "5 (1 deployed, 3 validated, 1 trained)"],
             ["Experiment folders with artifacts", "7"],
             ["Checkpoints & weights stored", "≈ 1.4 GB total"],
@@ -1327,19 +1328,17 @@ def build(output: Path) -> None:
     )
     h(doc, 2, "12.3 Known gaps (declared, not hidden)")
     bullets(doc, [
-        "README/docs leaderboard still shows the mid-run B3 figure (57.30); final "
-        "artifact 66.49 is what the product serves — docs refresh pending.",
         "Model Inspector does not yet print per-row provenance labels "
-        "(released vs in-house vs ensemble-recipe) — wording agreed, UI change queued.",
+        "(released vs in-house vs ensemble-recipe).",
         "vit_small registry row shows the +TTA metric (78.88) without a visible "
-        "“+TTA” suffix — raw is 76.63; label fix queued.",
-        "Frontend layer and today’s backend refinements are not yet committed to "
-        "git (20 existing commits cover through the 2026-09-23 research results).",
-        "Architecture docs mention PostgreSQL/WebRTC as production targets; the "
-        "deliberate local build ships SQLite/WebSocket — swap-in path documented in "
-        "deployment docs.",
-        "AU branch untrained; LRP not the production explanation yet; ADR-002 "
-        "ranking experiment open.",
+        "“+TTA” suffix — raw macro-F1 is 67.31.",
+        "Architecture docs (02) mention PostgreSQL/WebRTC as the original production "
+        "targets; the shipped local build uses SQLite/WebSocket — annotated with "
+        "as-built banners in docs.",
+        "AU branch untrained (w_a=0); LRP is research-only (ADR-004); ranking "
+        "ablation ADR-002 still open.",
+        "Author/institution fields on the cover page are placeholders to complete "
+        "before submission.",
     ])
 
     # ---------------- 13 ethics ----------------
@@ -1427,15 +1426,15 @@ def build(output: Path) -> None:
     h(doc, 1, "15. Conclusion")
     p(doc,
       "From an approved specification (2026-09-10) to a verified local product "
-      "(2026-09-23), this project delivered a complete ranking-based explainable "
+      "(2026-10-11), this project delivered a complete ranking-based explainable "
       "facial emotion system: seven experiment-tracked model runs with on-disk "
       "artifacts, a calibrated 89.99%-accuracy ensemble recipe and a paper-exact "
       "89.70% DAN reference on RAF-DB’s official 3,068-image test split, an "
       "explainability stack (ranking engine, Grad-CAM regions, certainty states, "
       "intensity proxy, event engine, deterministic narrator), a production-grade "
-      "local backend and five-area web frontend, and a 104-test quality gate that is "
-      "currently green alongside lint, production build and a 38-check end-to-end "
-      "smoke run.")
+      "local backend and five-area web frontend, and a 109-test quality gate that is "
+      "currently green alongside flake8, mypy, production build and a 38-assertion "
+      "end-to-end test.")
     p(doc,
       "Equally important is how the work was done: experiment or artifact, honest "
       "provenance for third-party weights, explicit disclosure of untrained branches "
@@ -1475,7 +1474,7 @@ def build(output: Path) -> None:
             ["Evaluate a run", "make evaluate   (or ml/evaluate.py --experiment-dir "
              "… --split test)"],
             ["Ensemble + calibration", "python scripts/ensemble_production.py"],
-            ["Run tests", "pytest tests/ -q   (expect 93 passed)"],
+            ["Run tests", "pytest tests/ -q   (expect 109 passed)"],
             ["Start API (warm champion)",
              "AFFECTA_WARM_MODEL=1 AFFECTA_MODEL=dan uvicorn src.api.main:app "
              "--host 127.0.0.1 --port 8765"],
@@ -1500,7 +1499,7 @@ def build(output: Path) -> None:
              "test_metrics.json (66.49 / 59.13), confusion matrix PNG/JSON, "
              "checkpoints (best/last + epochs 53–57)"],
             ["experiments/EXP-008-VIT-SMALL/",
-             "config/history, test_metrics.json (76.63 raw), TTA scan "
+             "config/history, test_metrics.json (67.31 macro-F1 raw), TTA scan "
              "(scan_vit_tta_final.json), ensemble_b3_vit_test.json, checkpoints"],
             ["experiments/EXP-009-DDAMFN-PP/",
              "Released ckpt + test_metrics_mtcnn.json (82.40) & "

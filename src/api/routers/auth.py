@@ -7,6 +7,7 @@ from typing import Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as DBSession
 
 from src.api.core.database import get_db
@@ -24,23 +25,32 @@ from src.api.schemas import (
     LoginIn,
     Ok,
     RegisterIn,
+    Responses,
     TokenOut,
     UserOut,
     ok,
 )
 
-_UNAUTHORIZED = {401: {"description": "Invalid or expired credentials"}}
+_UNAUTHORIZED: Responses = {401: {"description": "Invalid or expired credentials"}}
 
-router = APIRouter()
+router = APIRouter(tags=["Auth"])
 
-# Minimal in-memory login rate limit (docs/14: 10 attempts / minute)
+# Minimal in-memory rate limit (docs/14: login 10/min; register 5/min —
+# register is expensive: two 210k-iteration PBKDF2 hashes per call).
 _attempts: Dict[str, List[float]] = {}
+
+# Bound the tracker so one-shot IPs cannot grow it forever.
+_MAX_KEYS = 10_000
 
 
 def _rate_limited(key: str, max_attempts: int = 10, window: float = 60.0) -> bool:
     now = time.time()
     hits = [t for t in _attempts.get(key, []) if now - t < window]
     _attempts[key] = hits
+    if len(_attempts) > _MAX_KEYS:
+        cutoff = now - window
+        for k in [k for k, v in _attempts.items() if not v or v[-1] < cutoff]:
+            _attempts.pop(k, None)
     return len(hits) >= max_attempts
 
 
@@ -52,8 +62,22 @@ def _client_key(request: Request) -> str:
     return request.client.host if request.client else "local"
 
 
-@router.post("/api/auth/register", response_model=Ok[TokenOut], responses={409: {"description": "Email already registered"}})
-def register(payload: RegisterIn, db: DBSession = Depends(get_db)):
+@router.post(
+    "/api/auth/register",
+    response_model=Ok[TokenOut],
+    responses={
+        409: {"description": "Email already registered"},
+        429: {"description": "Too many registration attempts"},
+    },
+)
+def register(payload: RegisterIn, request: Request, db: DBSession = Depends(get_db)):
+    key = _client_key(request)
+    if _rate_limited(key, max_attempts=5):
+        raise HTTPException(status_code=429, detail="Too many registration attempts")
+    # Count every attempt (not just failures) — each register runs two
+    # 210k-iteration PBKDF2 hashes, so successful registrations must
+    # also be bounded.
+    _record_failure(key)
     existing = db.query(User).filter_by(email=payload.email.lower()).first()
     if existing is not None:
         raise HTTPException(status_code=409, detail="Email already registered")
@@ -63,9 +87,15 @@ def register(payload: RegisterIn, db: DBSession = Depends(get_db)):
         full_name=payload.full_name,
     )
     db.add(user)
-    db.flush()
-    db.add(SettingsRow(user_id=user.id))
-    db.commit()
+    try:
+        db.flush()
+        db.add(SettingsRow(user_id=user.id))
+        db.commit()
+    except IntegrityError:
+        # Check-then-insert race: a concurrent register slipped past the
+        # pre-check. Surface the same 409, not a 500.
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Email already registered") from None
     token = create_token(user.id)
     return ok(TokenOut(token=token, user=UserOut.model_validate(user)).model_dump())
 

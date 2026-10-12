@@ -63,7 +63,7 @@ train-expression:
 
 # Evaluate a trained model / experiment
 evaluate:
-	python ml/evaluate.py --experiment-dir experiments/EXP-008-VIT-SMALL --split test
+	python ml/evaluate.py --experiment-dir experiments/EXP-008-VIT-SMALL --split test --data-dir data/processed/rafdb $(ARGS)
 
 # Regenerate the project report
 report:
@@ -73,7 +73,7 @@ report:
 test:
 	python -m pytest tests/ -v
 
-# Run linting
+# Run linting + type-check
 lint:
 	flake8 src/ ml/ tests/ scripts/
 	mypy src/ ml/

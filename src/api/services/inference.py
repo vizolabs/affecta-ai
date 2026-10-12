@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import base64
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -96,8 +96,8 @@ def decode_jpeg(jpeg: bytes) -> Optional[np.ndarray]:
 
 def encode_heatmap_png(cam: np.ndarray) -> str:
     img = np.uint8(np.clip(cam, 0.0, 1.0) * 255)
-    ok, buf = cv2.imencode(".png", img)
-    return base64.b64encode(buf.tobytes()).decode("ascii") if ok else ""
+    ok_flag, buf = cv2.imencode(".png", np.ascontiguousarray(img))
+    return base64.b64encode(buf.tobytes()).decode("ascii") if ok_flag else ""
 
 
 def _crop(frame: np.ndarray, box: Box) -> Optional[np.ndarray]:
@@ -114,8 +114,9 @@ class AnalysisService:
     def __init__(self, model_name: Optional[str] = None, warm: bool = True):
         self.model_name = model_name or settings.default_model
         self.device = pick_device()
-        self.model = None
+        self.model: Optional[torch.nn.Module] = None
         self.transform = None
+        self.load_error: Optional[str] = None
         self.detector = FaceDetector()
         if warm:
             self.load_model()
@@ -128,8 +129,13 @@ class AnalysisService:
         if self.model is None:
             from ml.models.production import build_transform, load_production
 
-            self.model = load_production(self.model_name, device=str(self.device))
-            self.transform = build_transform(self.model_name)
+            try:
+                self.model = load_production(self.model_name, device=str(self.device))
+                self.transform = build_transform(self.model_name)
+                self.load_error = None
+            except Exception as exc:  # corrupt/missing checkpoint
+                self.load_error = f"{type(exc).__name__}: {exc}"
+                raise
 
     def detect_faces(self, frame_bgr: np.ndarray) -> List[Box]:
         # No slicing here: the tracker (single-person mode) picks the best
@@ -190,7 +196,10 @@ class SessionAnalysis:
         ema_alpha: float = 0.35,
     ):
         self.service = service
-        self.xai_interval = xai_interval or settings.xai_frame_interval
+        # Clamp: negative/zero would make frame_id % xai_interval always 0
+        # (Grad-CAM on every frame — a cheap CPU DoS from one URL param).
+        raw_interval = xai_interval or settings.xai_frame_interval
+        self.xai_interval = max(1, min(int(raw_interval), 120))
         self.tracker = FaceTracker(max_faces=settings.max_faces)
         self.event_engine = EventEngine(
             intensity_threshold=settings.intensity_change_threshold,
@@ -220,7 +229,7 @@ class SessionAnalysis:
         self._conf_sum = 0.0
         self._int_sum = 0.0
         self._obs = 0
-        self.last_events = []
+        self.last_events: List[Any] = []
 
     @property
     def avg_confidence(self) -> Optional[float]:
@@ -312,7 +321,13 @@ class SessionAnalysis:
             ranked = list(scores.keys())
             dominant = ranked[0]
             confidence = float(raw[EMOTIONS.index(dominant)])
-            certainty, margin = self.uncertainty.compute([scores[e] for e in EMOTIONS])
+            # Certainty/margin from classifier probabilities (ADR-006), NOT
+            # from the renormalised evidence scores — the ranker's output is
+            # scaled by the evidence total, which biases margin upward and
+            # everything looks "certain".
+            certainty, margin = self.uncertainty.compute(
+                [float(ema[i]) for i in range(len(EMOTIONS))]
+            )
             intensity = distribution_extremity(raw)
             if intensity < 33:
                 category = "low"
@@ -328,9 +343,9 @@ class SessionAnalysis:
                 "intensity": intensity,
             }
             ranked_by_id[tid] = ranked
-            regions = self._region_cache.get(tid)
+            cached_regions: Optional[Dict[str, float]] = self._region_cache.get(tid)
             face_ctx[tid] = {
-                "regions": regions,
+                "regions": cached_regions,
                 "ranked_emotions": ranked,
                 "margin": margin,
                 "certainty": certainty,
@@ -351,7 +366,7 @@ class SessionAnalysis:
                 "intensity_category": category,
                 "action_units": None,
                 "au_model_status": "untrained",
-                "regions": regions,
+                "regions": cached_regions,
             })
             self._conf_sum += confidence
             self._int_sum += intensity
@@ -370,21 +385,21 @@ class SessionAnalysis:
 
         xai_payload = None
         for tid in sorted(xai_targets):
-            box = tracks.get(tid)
-            if box is None:
+            next_box = tracks.get(tid)
+            if next_box is None:
                 continue
-            cam = cams.get(tid)
-            if cam is None:
-                crop = _crop(frame, box)
+            next_cam = cams.get(tid)
+            if next_cam is None:
+                crop = _crop(frame, next_box)
                 if crop is None:
                     continue
                 target = EMOTIONS.index(states[tid]["emotion"]) if tid in states else None
                 try:
-                    cam = self.service.gradcam(crop, target)
+                    next_cam = self.service.gradcam(crop, target)
                 except Exception:
                     continue
-            cams[tid] = cam
-            regions = region_percentages(cam)
+            cams[tid] = next_cam
+            regions = region_percentages(next_cam)
             self._region_cache[tid] = regions
             self._re_cache[tid] = region_evidence(regions)
             face_ctx.setdefault(tid, {})["regions"] = regions
@@ -395,7 +410,7 @@ class SessionAnalysis:
                     "method": "gradcam",
                     "emotion": st.get("emotion"),
                     "confidence": st.get("confidence"),
-                    "heatmap": encode_heatmap_png(cam),
+                    "heatmap": encode_heatmap_png(next_cam),
                     "regions": regions,
                 }
 
@@ -417,6 +432,12 @@ class SessionAnalysis:
                 ],
             }
             self.timeline.append(timeline_sample)
+            # Cap: ~1 sample/sec is written forever; the whole array is
+            # serialised into the session metadata JSON on every flush, so
+            # an unbounded list turns an 8-hour session into multi-MB
+            # rewrites every few seconds. Keep the most recent hour.
+            if len(self.timeline) > 3600:
+                del self.timeline[: len(self.timeline) - 3600]
 
         for tid in [t for t in self._region_cache if t not in self.tracker.alive_ids]:
             self._region_cache.pop(tid, None)

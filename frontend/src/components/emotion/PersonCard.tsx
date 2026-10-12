@@ -23,6 +23,7 @@ const CERTAINTY_STYLE: Record<string, string> = {
   certain: "bg-emerald-500/15 text-emerald-400 border-emerald-500/40",
   uncertain: "bg-amber-500/15 text-amber-400 border-amber-500/40",
   ambiguous: "bg-red-500/15 text-red-400 border-red-500/40",
+  insufficient: "bg-amber-500/15 text-amber-400 border-amber-500/40",
 };
 
 export default function PersonCard({

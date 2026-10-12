@@ -3,7 +3,7 @@
 import torch
 import torch.nn as nn
 import torchvision.models as models
-from typing import List
+from typing import List, Optional
 
 from src.core.config import NUM_EMOTIONS
 
@@ -118,7 +118,7 @@ class VGG16Features(nn.Module):
         
         # Hook for LRP
         self._feature_hook = None
-        self._intermediate_features = None
+        self._intermediate_features: Optional[torch.Tensor] = None
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Extract features through all blocks."""
@@ -189,7 +189,7 @@ class VGG16ExpressionClassifier(nn.Module):
         )
         
         # For LRP
-        self._intermediate_features = None
+        self._intermediate_features: Optional[torch.Tensor] = None
         self._register_lrp_hook()
     
     def _register_lrp_hook(self):
@@ -281,7 +281,7 @@ class ResNet50ExpressionClassifier(nn.Module):
         self.head = nn.Linear(backbone.fc.in_features, num_classes)
 
         # For LRP (populated by get_features)
-        self._intermediate_features = None
+        self._intermediate_features: Optional[torch.Tensor] = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.features(x)
@@ -351,7 +351,7 @@ class EfficientNetB2ExpressionClassifier(nn.Module):
         self.head = nn.Linear(backbone.classifier[1].in_features, num_classes)
 
         # For LRP (populated by get_features)
-        self._intermediate_features = None
+        self._intermediate_features: Optional[torch.Tensor] = None
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.features(x)

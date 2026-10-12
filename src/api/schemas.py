@@ -53,6 +53,9 @@ class ApiResponse(BaseModel):
 
 T = TypeVar("T")
 
+# FastAPI `responses=` mapping type (status code -> OpenAPI response object).
+Responses = dict[Any, dict[str, Any]]
+
 
 class Ok(BaseModel, Generic[T]):
     """Typed success envelope for OpenAPI (matches the `ok()` helper)."""

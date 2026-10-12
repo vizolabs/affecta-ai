@@ -65,8 +65,8 @@ class UncertaintyEngine:
         Returns:
             Optimal (margin_threshold, probability_threshold)
         """
-        best_threshold = (0.15, 0.40)
-        best_score = -1
+        best_threshold: tuple[float, float] = (0.15, 0.40)
+        best_score: float = -1
         
         for margin_thresh in [0.10, 0.15, 0.20, 0.25]:
             for prob_thresh in [0.30, 0.35, 0.40, 0.45]:

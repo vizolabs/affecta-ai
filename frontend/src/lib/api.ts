@@ -36,12 +36,14 @@ export function handleAuthFailure(): void {
     authFailureShown = true;
     toast.error("Session expired — please sign in again.");
   }
-  if (!window.location.pathname.startsWith("/login")) {
-    window.location.assign("/login");
+  // "/" is the login portal (it redirects to /dashboard when a session
+  // exists) — going straight there skips an extra hop.
+  if (window.location.pathname !== "/") {
+    window.location.assign("/");
   }
 }
 
-/** Extract a readable message from FastAPI / Human Facial Emotion Detection error bodies. */
+/** Extract a readable message from FastAPI error bodies. */
 function flattenDetail(detail: unknown): string | null {
   if (typeof detail === "string" && detail.length > 0) {
     return detail.replace(/^Value error,\s*/, "");
@@ -94,11 +96,12 @@ export async function readError(res: Response): Promise<string> {
   return res.statusText || `HTTP ${res.status}`;
 }
 
-/** POST/GET JSON helper — unwraps the Human Facial Emotion Detection envelope, throws ApiError. */
+/** POST/GET JSON helper — unwraps the API envelope, throws ApiError. */
 export async function apiFetch<T>(
   path: string,
   init: RequestInit = {},
   token?: string | null,
+  timeoutMs = 15_000,
 ): Promise<T> {
   const headers = new Headers(init.headers);
   if (token && !headers.has("Authorization")) {
@@ -111,7 +114,12 @@ export async function apiFetch<T>(
   ) {
     headers.set("Content-Type", "application/json");
   }
-  const res = await fetch(`${API_URL}${path}`, { ...init, headers });
+  // A hung server would otherwise leave every skeleton spinning forever.
+  const res = await fetch(`${API_URL}${path}`, {
+    ...init,
+    headers,
+    signal: AbortSignal.timeout(timeoutMs),
+  });
   if (res.status === 401 && !isAuthEndpoint(path)) {
     handleAuthFailure();
     throw new ApiError("Session expired — please sign in again.", 401);
@@ -134,7 +142,10 @@ export async function apiBlob(
   const headers: HeadersInit = token
     ? { Authorization: `Bearer ${token}` }
     : {};
-  const res = await fetch(`${API_URL}${path}`, { headers });
+  const res = await fetch(`${API_URL}${path}`, {
+    headers,
+    signal: AbortSignal.timeout(30_000),
+  });
   if (res.status === 401 && !isAuthEndpoint(path)) {
     handleAuthFailure();
     throw new ApiError("Session expired — please sign in again.", 401);

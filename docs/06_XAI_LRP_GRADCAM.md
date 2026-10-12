@@ -5,6 +5,8 @@ Status: LOCKED (LRP primary, Grad-CAM comparison)
 Version: V1.0
 ```
 
+As-shipped: Grad-CAM is the only production XAI path (live + Lab). LRP-ε implemented but offline/research-only (ADR-004). Deletion/insertion faithfulness studies pending.
+
 ---
 
 ## 1. Primary XAI: Layer-wise Relevance Propagation (LRP)

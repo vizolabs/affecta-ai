@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session as DBSession
 
 from src.api.core.database import get_db
 from src.api.core.deps import get_current_user
 from src.api.models import EventRow, SessionRow, User
-from src.api.schemas import event_out, ok
+from src.api.schemas import Responses, event_out, ok
 from src.api.services.report import (
     compute_summary,
     events_csv,
@@ -16,7 +18,10 @@ from src.api.services.report import (
     report_pdf,
 )
 
-router = APIRouter()
+router = APIRouter(tags=["Analytics"])
+
+_UNAUTHORIZED: Responses = {401: {"description": "Invalid or expired credentials"}}
+_NOT_FOUND: Responses = {404: {"description": "Session not found"}}
 
 
 def _get_owned(session_id: str, user: User, db: DBSession) -> SessionRow:
@@ -37,7 +42,11 @@ def _load(row: SessionRow, db: DBSession):
     return events, timeline
 
 
-@router.get("/api/analytics/summary", response_model=None)
+@router.get(
+    "/api/analytics/summary",
+    response_model=None,
+    responses={**_UNAUTHORIZED, **_NOT_FOUND},
+)
 def get_summary(
     session_id: str,
     user: User = Depends(get_current_user),
@@ -48,7 +57,11 @@ def get_summary(
     return ok(compute_summary(row, events, timeline))
 
 
-@router.get("/api/analytics/timeline", response_model=None)
+@router.get(
+    "/api/analytics/timeline",
+    response_model=None,
+    responses={**_UNAUTHORIZED, **_NOT_FOUND},
+)
 def get_timeline(
     session_id: str,
     user: User = Depends(get_current_user),
@@ -63,10 +76,16 @@ def get_timeline(
     })
 
 
-@router.get("/api/analytics/export/{session_id}", response_model=None)
+@router.get(
+    "/api/analytics/export/{session_id}",
+    response_model=None,
+    responses={**_UNAUTHORIZED, **_NOT_FOUND, 400: {"description": "Unknown export format"}},
+)
 def export_report(
     session_id: str,
-    format: str = "pdf",
+    format: Literal["pdf", "csv", "json"] = Query(
+        "pdf", description="Export format (pdf | csv | json)"
+    ),
     user: User = Depends(get_current_user),
     db: DBSession = Depends(get_db),
 ):

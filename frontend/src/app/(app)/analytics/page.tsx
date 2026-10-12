@@ -83,6 +83,7 @@ function TransitionMatrix({ matrix }: { matrix: Record<string, number> }) {
         {EMOTIONS.map((to) => (
           <span
             key={to}
+            role="columnheader"
             className="pb-1 text-center font-medium text-muted"
             title={EMOTION_LABEL[to]}
           >
@@ -92,6 +93,7 @@ function TransitionMatrix({ matrix }: { matrix: Record<string, number> }) {
         {EMOTIONS.map((from) => (
           <div key={from} className="contents" role="row">
             <span
+              role="rowheader"
               className="flex items-center pr-1 text-right font-medium text-muted"
               title={EMOTION_LABEL[from]}
             >
@@ -103,6 +105,7 @@ function TransitionMatrix({ matrix }: { matrix: Record<string, number> }) {
               return (
                 <span
                   key={to}
+                  role="cell"
                   title={`${EMOTION_LABEL[from]} → ${EMOTION_LABEL[to]}: ${n}`}
                   className={`flex h-7 items-center justify-center rounded-sm tabular-nums ${
                     n === 0 ? "bg-border/30 text-muted/50" : ""
@@ -199,6 +202,7 @@ function AnalyticsInner() {
   const [timeline, setTimeline] = useState<AnalyticsTimeline | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [detailKey, setDetailKey] = useState(0);
   const [exporting, setExporting] = useState<string | null>(null);
   const [armedDelete, setArmedDelete] = useState(false);
   const [eventFilter, setEventFilter] = useState<string | null>(null);
@@ -285,7 +289,7 @@ function AnalyticsInner() {
     return () => {
       cancelled = true;
     };
-  }, [selected, token]);
+  }, [selected, token, detailKey]);
 
   /* comparison: previous session in the list */
   useEffect(() => {
@@ -464,7 +468,12 @@ function AnalyticsInner() {
       {/* session list */}
       <Card title="Sessions" className="lg:col-span-1">
         {listError && (
-          <p className="mb-2 text-xs text-red-400">{listError}</p>
+          <div className="mb-2 text-xs text-red-400">
+            <p>{listError}</p>
+            <Button variant="ghost" className="mt-1" onClick={loadSessions}>
+              Retry
+            </Button>
+          </div>
         )}
         <div className="mb-2 flex gap-1.5 text-xs">
           <input
@@ -535,9 +544,16 @@ function AnalyticsInner() {
       {/* stats + charts */}
       <div className="space-y-4 lg:col-span-3">
         {detailError && (
-          <p role="alert" className="text-sm text-red-400">
-            {detailError}
-          </p>
+          <div role="alert" className="text-sm text-red-400">
+            <p>{detailError}</p>
+            <Button
+              variant="ghost"
+              className="mt-1"
+              onClick={() => setDetailKey((k) => k + 1)}
+            >
+              Retry
+            </Button>
+          </div>
         )}
         {!selected && (
           <Card title="Statistics">
@@ -1009,8 +1025,8 @@ function AnalyticsInner() {
                     : "No events match the current filters."}
                 </p>
               ) : (
-                <div className="max-h-72 overflow-y-auto">
-                  <table className="w-full text-left text-xs">
+                <div className="max-h-72 overflow-auto">
+                  <table className="w-full min-w-[420px] text-left text-xs">
                     <thead className="sticky top-0 bg-surface text-muted">
                       <tr>
                         <th className="py-1 pr-2">Time</th>
